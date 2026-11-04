@@ -3,8 +3,8 @@
 <div class="flex justify-between items-center mb-4">
   <h2 class="text-2xl font-black">Kazi za Kukamua</h2>
   <div class="flex gap-2">
-    <a href="/report/daily/?date={{ today|date:'Y-m-d' }}" class="bg-green-600 text-white px-5 py-3 rounded-full font-bold text-sm">🖨️ Print Leo</a>
-    <a href="/jobs/new/" class="bg-black text-white px-5 py-3 rounded-full font-bold text-sm">+ Kazi Mpya</a>
+    <a href="/{% if mill %}{{ mill.slug }}/{% endif %}report/daily/?date={{ today|date:'Y-m-d' }}" class="bg-green-600 text-white px-5 py-3 rounded-full font-bold text-sm">🖨️ Print Leo</a>
+    <a href="/{% if mill %}{{ mill.slug }}/{% endif %}jobs/create/" class="bg-black text-white px-5 py-3 rounded-full font-bold text-sm">+ Kazi Mpya</a>
   </div>
 </div>
 
@@ -40,7 +40,7 @@
   <a href="?date=zote" class="px-4 py-2 rounded-full text-sm font-bold border {% if filter_date == 'zote' %}bg-black text-white border-black{% else %}bg-white text-gray-600{% endif %}">Zote</a>
   <div class="ml-auto">
     {% if filter_date == 'leo' %}
-      <a href="/report/daily/?date={{ today|date:'Y-m-d' }}" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-bold">🖨️ Print ya Leo</a>
+      <a href="/{% if mill %}{{ mill.slug }}/{% endif %}report/daily/?date={{ today|date:'Y-m-d' }}" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-bold">🖨️ Print ya Leo</a>
     {% endif %}
   </div>
 </div>
@@ -100,8 +100,8 @@
         </td>
         <td class="pr-3">
           <div class="flex gap-1 justify-end">
-            <a href="/jobs/{{ j.id }}/edit/" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[11px] font-black border border-blue-100 hover:bg-blue-600 hover:text-white">Edit</a>
-            <a href="/jobs/{{ j.id }}/delete/" onclick="return confirm('Futa Kazi #{{ j.id }} - {{ j.seed_weight_kg }}KG?')" class="px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-[11px] font-black border border-red-100 hover:bg-red-600 hover:text-white">Delete</a>
+            <a href="/{% if mill %}{{ mill.slug }}/{% endif %}jobs/{{ j.id }}/edit/" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[11px] font-black border border-blue-100 hover:bg-blue-600 hover:text-white">Edit</a>
+            <a href="/{% if mill %}{{ mill.slug }}/{% endif %}jobs/{{ j.id }}/delete/" onclick="return confirm('Futa Kazi #{{ j.id }} - {{ j.seed_weight_kg }}KG?')" class="px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-[11px] font-black border border-red-100 hover:bg-red-600 hover:text-white">Delete</a>
           </div>
         </td>
       </tr>
@@ -109,7 +109,7 @@
       <tr><td colspan="7" class="py-16 text-center">
         <div class="text-4xl mb-2">📭</div>
         <p class="text-gray-400 font-bold">Hakuna kazi {% if filter_date == 'leo' %}leo{% elif filter_date == 'jana' %}jana{% else %}kwa filter hii{% endif %}</p>
-        <a href="/jobs/new/" class="inline-block mt-3 bg-black text-white px-6 py-2.5 rounded-full text-xs font-black">+ Ongeza Kazi</a>
+        <a href="/{% if mill %}{{ mill.slug }}/{% endif %}jobs/create/" class="inline-block mt-3 bg-black text-white px-6 py-2.5 rounded-full text-xs font-black">+ Ongeza Kazi</a>
       </td></tr>
     {% endfor %}
     </tbody>
