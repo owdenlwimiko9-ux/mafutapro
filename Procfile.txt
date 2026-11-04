@@ -1,0 +1,1 @@
+web: gunicorn mafutapro.wsgi --log-file -

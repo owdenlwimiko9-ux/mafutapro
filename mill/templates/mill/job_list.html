@@ -1,0 +1,119 @@
+{% extends 'mill/base.html' %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <h2 class="text-2xl font-black">Kazi za Kukamua</h2>
+  <div class="flex gap-2">
+    <a href="/report/daily/?date={{ today|date:'Y-m-d' }}" class="bg-green-600 text-white px-5 py-3 rounded-full font-bold text-sm">🖨️ Print Leo</a>
+    <a href="/jobs/new/" class="bg-black text-white px-5 py-3 rounded-full font-bold text-sm">+ Kazi Mpya</a>
+  </div>
+</div>
+
+<!-- SUMMARY YA LEO -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+  <div class="bg-white border rounded-2xl p-4">
+    <div class="text-[11px] text-gray-400 uppercase font-black">Leo {{ today_count }} Kazi</div>
+    <div class="font-black text-xl">{{ today_kg|floatformat:0 }}kg</div>
+    <div class="text-xs text-gray-500 font-bold">{{ today_oil|floatformat:0 }}L mafuta</div>
+  </div>
+  <div class="bg-white border rounded-2xl p-4">
+    <div class="text-[11px] text-gray-400 uppercase font-black">Cash Leo</div>
+    <div class="font-black text-xl text-green-600">{{ today_cash|floatformat:0 }}</div>
+    <div class="text-[10px] text-gray-400 font-bold">TZS</div>
+  </div>
+  <div class="bg-white border rounded-2xl p-4">
+    <div class="text-[11px] text-gray-400 uppercase font-black">Deni Leo</div>
+    <div class="font-black text-xl text-red-600">{{ today_debt|floatformat:0 }}</div>
+    <div class="text-[10px] text-gray-400 font-bold">TZS</div>
+  </div>
+  <div class="bg-black text-white rounded-2xl p-4">
+    <div class="text-[11px] text-gray-400 uppercase font-black">Jumla Filter</div>
+    <div class="font-black text-xl">{{ total_cash|floatformat:0 }}</div>
+    <div class="text-[11px] text-gray-300">{{ jobs.count }} kazi • {{ total_service|floatformat:0 }} TZS service</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="flex gap-2 mb-4 items-center overflow-auto">
+  <a href="?date=leo" class="px-4 py-2 rounded-full text-sm font-bold border {% if filter_date == 'leo' %}bg-black text-white border-black{% else %}bg-white text-gray-600{% endif %}">Leo</a>
+  <a href="?date=jana" class="px-4 py-2 rounded-full text-sm font-bold border {% if filter_date == 'jana' %}bg-black text-white border-black{% else %}bg-white text-gray-600{% endif %}">Jana</a>
+  <a href="?date=wiki" class="px-4 py-2 rounded-full text-sm font-bold border {% if filter_date == 'wiki' %}bg-black text-white border-black{% else %}bg-white text-gray-600{% endif %}">Wiki</a>
+  <a href="?date=zote" class="px-4 py-2 rounded-full text-sm font-bold border {% if filter_date == 'zote' %}bg-black text-white border-black{% else %}bg-white text-gray-600{% endif %}">Zote</a>
+  <div class="ml-auto">
+    {% if filter_date == 'leo' %}
+      <a href="/report/daily/?date={{ today|date:'Y-m-d' }}" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-bold">🖨️ Print ya Leo</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+  <div class="p-4 border-b flex justify-between items-center bg-gray-50/50">
+    <h3 class="font-black text-sm uppercase">
+      {% if filter_date == 'leo' %}Kazi za Leo - {{ jobs.count }}{% elif filter_date == 'jana' %}Kazi za Jana - {{ jobs.count }}{% elif filter_date == 'wiki' %}Wiki Hii - {{ jobs.count }}{% else %}Kazi Zote - {{ jobs.count }}{% endif %}
+    </h3>
+    <span class="text-xs text-gray-400 font-bold">{{ today|date:"d/m/Y" }}</span>
+  </div>
+  
+  <div class="overflow-auto">
+  <table class="w-full text-sm">
+    <thead class="text-[11px] text-gray-400 uppercase bg-gray-50">
+      <tr>
+        <th class="text-left p-3">#</th>
+        <th class="text-left">Mteja / Chanzo</th>
+        <th class="text-left">Mbegu</th>
+        <th class="text-left">Mafuta</th>
+        <th class="text-left">Malipo</th>
+        <th class="text-left">Muda</th>
+        <th class="text-right pr-4">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for j in jobs %}
+      <tr class="border-t hover:bg-gray-50">
+        <td class="p-3 font-black text-gray-400">#{{ j.id }}</td>
+        <td class="font-bold">
+          {% if j.service_type == 'OWNER' %}
+            <span class="bg-green-600 text-white px-2.5 py-1 rounded-full text-[11px] font-black">KIWANDA</span>
+            <br><span class="text-[11px] text-gray-400 font-normal">{{ j.cake_produced_kg|floatformat:0 }}kg mashudu</span>
+          {% else %}
+            {{ j.customer.name|default:"Mteja" }}<br><span class="text-xs text-gray-400 font-normal">{{ j.customer.phone|default:"" }}</span>
+          {% endif %}
+        </td>
+        <td class="font-black">{{ j.seed_weight_kg|floatformat:0 }}kg</td>
+        <td class="font-black text-amber-600">{{ j.oil_produced_litre|floatformat:0 }}L</td>
+        <td>
+          {% if j.service_type == 'OWNER' %}
+            {% if j.service_cost > 0 %}
+              <span class="text-xs font-black">{{ j.service_cost|floatformat:0 }} TZS</span><br><span class="text-[10px] text-gray-400">Gharama</span>
+            {% else %}
+              <span class="text-xs font-bold text-gray-400">Hakuna</span>
+            {% endif %}
+          {% else %}
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-black {% if j.payment_status == 'PAID' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">{{ j.payment_status }}</span><br>
+            <span class="text-xs font-black">{{ j.amount_paid|floatformat:0 }}/{{ j.service_cost|floatformat:0 }}</span>
+          {% endif %}
+        </td>
+        <td class="text-gray-500 text-xs font-bold">
+          {{ j.created_at|date:"d/m H:i" }}<br>
+          {% if filter_date == 'zote' or filter_date == 'wiki' %}
+            <span class="text-[10px] {% if j.created_at.date == today %}bg-black text-white px-1.5 py-0.5 rounded-full{% else %}text-gray-400{% endif %}">{{ j.created_at|date:"D d/m" }}</span>
+          {% endif %}
+        </td>
+        <td class="pr-3">
+          <div class="flex gap-1 justify-end">
+            <a href="/jobs/{{ j.id }}/edit/" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[11px] font-black border border-blue-100 hover:bg-blue-600 hover:text-white">Edit</a>
+            <a href="/jobs/{{ j.id }}/delete/" onclick="return confirm('Futa Kazi #{{ j.id }} - {{ j.seed_weight_kg }}KG?')" class="px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-[11px] font-black border border-red-100 hover:bg-red-600 hover:text-white">Delete</a>
+          </div>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="py-16 text-center">
+        <div class="text-4xl mb-2">📭</div>
+        <p class="text-gray-400 font-bold">Hakuna kazi {% if filter_date == 'leo' %}leo{% elif filter_date == 'jana' %}jana{% else %}kwa filter hii{% endif %}</p>
+        <a href="/jobs/new/" class="inline-block mt-3 bg-black text-white px-6 py-2.5 rounded-full text-xs font-black">+ Ongeza Kazi</a>
+      </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

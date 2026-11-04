@@ -1,0 +1,18 @@
+{% extends 'mill/base.html' %}
+{% block content %}
+<h2 class="font-black text-xl mb-4">Hariri Matumizi</h2>
+<form method="POST" class="bg-white p-6 rounded-2xl border space-y-3 max-w-md">
+  {% csrf_token %}
+  <select name="category" class="w-full border rounded-xl p-3 font-bold">
+    <option value="PACKAGING" {% if expense.category == 'PACKAGING' %}selected{% endif %}>Packaging</option>
+    <option value="TRANSPORT" {% if expense.category == 'TRANSPORT' %}selected{% endif %}>Transport</option>
+    <option value="POWER" {% if expense.category == 'POWER' %}selected{% endif %}>Luku/Umeme</option>
+    <option value="REPAIR" {% if expense.category == 'REPAIR' %}selected{% endif %}>Repair</option>
+    <option value="PURCHASE" {% if expense.category == 'PURCHASE' %}selected{% endif %}>Ununuzi</option>
+    <option value="OTHER" {% if expense.category == 'OTHER' %}selected{% endif %}>Other</option>
+  </select>
+  <input type="text" name="description" value="{{ expense.description }}" class="w-full border rounded-xl p-3" required>
+  <input type="number" step="0.01" name="amount" value="{{ expense.amount }}" class="w-full border rounded-xl p-3 font-black" required>
+  <button class="w-full bg-black text-white py-3 rounded-full font-black">Hifadhi</button>
+</form>
+{% endblock %}

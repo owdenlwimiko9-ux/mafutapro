@@ -1,0 +1,33 @@
+{% extends 'mill/base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-black">Viwanda Vyangu</h1>
+    <a href="/mills/create/" class="bg-black text-white px-5 py-2.5 rounded-full font-bold text-sm">+ Ongeza Kiwanda</a>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    {% for mill in mills %}
+    <a href="/{{ mill.slug }}/stock/" class="bg-white border rounded-2xl p-5 hover:border-black transition">
+      <div class="flex justify-between">
+        <div>
+          <h3 class="font-black text-lg">{{ mill.name }}</h3>
+          <p class="text-xs text-gray-500 font-bold uppercase">{{ mill.location|default:"Dar" }} • {{ mill.slug }}</p>
+        </div>
+        <span class="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-black h-fit">Active</span>
+      </div>
+      <div class="mt-4 flex gap-2 text-xs font-bold text-gray-400">
+        <span><i class="fa-solid fa-boxes-stacked"></i> {{ mill.products.count }} bidhaa</span>
+        <span>•</span>
+        <span>{{ mill.owner.username }}</span>
+      </div>
+    </a>
+    {% empty %}
+    <div class="col-span-2 bg-white border rounded-2xl p-10 text-center">
+      <p class="font-bold text-gray-400">Hakuna viwanda</p>
+      <a href="/mills/create/" class="inline-block mt-3 bg-black text-white px-5 py-2 rounded-full font-bold text-sm">Tengeneza Kiwanda cha Kwanza</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

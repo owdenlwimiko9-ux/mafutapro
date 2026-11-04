@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<title>MafutaPro - {{ mill.name|default:"Mill" }}</title>
+</head>
+<body class="bg-[#f6f7f9] font-sans">
+<div class="flex min-h-screen">
+  <div id="sidebar" class="w-64 bg-white border-r fixed md:static inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition duration-200 p-6 flex flex-col">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="font-black text-2xl text-green-700"><i class="fa-solid fa-droplet"></i> MafutaPro</h1>
+      <button onclick="document.getElementById('sidebar').classList.add('-translate-x-full')" class="md:hidden bg-gray-100 w-8 h-8 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <nav class="space-y-2 flex-1">
+      <a href="/{% if mill %}{{ mill.slug }}{% endif %}/" class="flex items-center gap-3 p-3 rounded-xl {% if request.path == '/' or 'dashboard' in request.path %}bg-green-700 text-white{% else %}hover:bg-gray-100{% endif %}"><i class="fa-solid fa-chart-line w-5"></i> Dashboard</a>
+      <a href="/{% if mill %}{{ mill.slug }}{% endif %}/jobs/" class="flex items-center gap-3 p-3 rounded-xl {% if 'jobs' in request.path %}bg-green-700 text-white{% else %}hover:bg-gray-100{% endif %}"><i class="fa-solid fa-gear w-5"></i> Kukamua</a>
+      <a href="/{% if mill %}{{ mill.slug }}{% endif %}/sales/" class="flex items-center gap-3 p-3 rounded-xl {% if 'sales' in request.path %}bg-green-700 text-white{% else %}hover:bg-gray-100{% endif %}"><i class="fa-solid fa-cart-shopping w-5"></i> Mauzo</a>
+      <a href="/{% if mill %}{{ mill.slug }}{% endif %}/stock/" class="flex items-center gap-3 p-3 rounded-xl {% if 'stock' in request.path %}bg-black text-white{% else %}hover:bg-gray-100{% endif %}"><i class="fa-solid fa-boxes-stacked w-5"></i> Stoo</a>
+      <a href="/{% if mill %}{{ mill.slug }}{% endif %}/expenses/" class="flex items-center gap-3 p-3 rounded-xl {% if 'expenses' in request.path %}bg-green-700 text-white{% else %}hover:bg-gray-100{% endif %}"><i class="fa-solid fa-money-bill-wave w-5"></i> Matumizi</a>
+      <a href="/{% if mill %}{{ mill.slug }}{% endif %}/report/daily/" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100"><i class="fa-solid fa-file-lines w-5"></i> Ripoti</a>
+    </nav>
+    <div class="space-y-3">
+      <div class="p-4 bg-green-50 rounded-2xl border border-green-100">
+        <p class="text-sm font-black flex items-center gap-2"><i class="fa-solid fa-industry text-green-700"></i> {{ mill.name|default:"Willa Foods" }}</p>
+        <p class="text-[11px] text-gray-500 font-bold uppercase mt-1">{{ mill.slug }}</p>
+      </div>
+      <div class="p-3 bg-gray-50 rounded-2xl flex justify-between items-center">
+        <div>
+          <p class="text-xs font-black">{{ request.user.username|default:"Guest" }}</p>
+          <p class="text-[10px] text-gray-400 font-bold">Owner</p>
+        </div>
+        <a href="/logout/" class="bg-black text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-600 transition" title="Logout">
+          <i class="fa-solid fa-right-from-bracket text-xs"></i>
+        </a>
+      </div>
+      <a href="/mills/" class="flex items-center justify-center gap-2 p-2.5 rounded-xl border bg-white text-xs font-black hover:bg-gray-50">
+        <i class="fa-solid fa-exchange"></i> Badilisha Kiwanda
+      </a>
+    </div>
+  </div>
+  <div id="overlay" onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden')" class="hidden fixed inset-0 bg-black/30 z-30 md:hidden"></div>
+  <div class="flex-1 md:ml-0">
+    <div class="bg-white border-b p-4 md:hidden flex justify-between items-center sticky top-0 z-20">
+      <button onclick="document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.remove('hidden')" class="bg-gray-100 w-9 h-9 rounded-full">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <h1 class="font-black text-green-700">MafutaPro</h1>
+      <a href="/logout/" class="bg-black text-white w-9 h-9 rounded-full flex items-center justify-center"><i class="fa-solid fa-right-from-bracket text-xs"></i></a>
+    </div>
+    <div class="p-4 md:p-8">{% block content %}{% endblock %}</div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('#sidebar a').forEach(a => {
+  a.addEventListener('click', () => {
+    if(window.innerWidth < 768){
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('overlay').classList.add('hidden');
+    }
+  });
+});
+</script>
+</body>
+</html>

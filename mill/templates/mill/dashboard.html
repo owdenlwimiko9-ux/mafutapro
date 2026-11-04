@@ -1,0 +1,122 @@
+{% extends 'mill/base.html' %}
+{% block content %}
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h2 class="text-2xl font-black">Karibu, Boss</h2>
+    <p class="text-gray-500 text-sm">Muhtasari wa leo - {{ oil_stock|floatformat:0 }}L mafuta • {{ cake_stock|floatformat:0 }}kg mashudu • {{ seed_stock|floatformat:0 }}kg alizeti</p>
+  </div>
+  <a href="/report/daily/?date={{ today|default:'' }}" class="bg-black text-white px-5 py-3 rounded-full font-bold text-sm no-print">🖨️ Print Report ya Leo</a>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white p-5 rounded-2xl shadow-sm border">
+    <p class="text-xs text-gray-400 uppercase font-bold">Mafuta Stoo</p>
+    <h3 class="text-3xl font-black mt-2">{{ oil_stock|floatformat:0 }} <span class="text-sm font-normal">L</span></h3>
+    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">In Stock</span>
+  </div>
+  <div class="bg-white p-5 rounded-2xl shadow-sm border">
+    <p class="text-xs text-gray-400 uppercase font-bold">Mashudu Stoo</p>
+    <h3 class="text-3xl font-black mt-2">{{ cake_stock|floatformat:0 }} <span class="text-sm font-normal">KG</span></h3>
+    <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">Ready</span>
+  </div>
+  <div class="bg-white p-5 rounded-2xl shadow-sm border">
+    <p class="text-xs text-gray-400 uppercase font-bold">Mapato Jumla</p>
+    <h3 class="text-3xl font-black mt-2">{{ income|floatformat:0 }}</h3>
+    <p class="text-xs text-gray-400">TZS - Cash + Mauzo</p>
+  </div>
+  <div class="bg-gradient-to-br from-green-700 to-green-600 p-5 rounded-2xl shadow-sm text-white">
+    <p class="text-xs text-green-200 uppercase font-bold">Faida Halisi</p>
+    <h3 class="text-3xl font-black mt-2">{{ profit|floatformat:0 }}</h3>
+    <p class="text-xs text-green-200">TZS baada ya matumizi</p>
+  </div>
+</div>
+
+<!-- SUMMARY YA LEO PEKEE -->
+<div class="bg-black text-white rounded-2xl p-4 mb-6 flex justify-between items-center">
+  <div class="flex gap-6 text-sm">
+    <div><span class="text-gray-400 text-xs uppercase">Leo Kazi:</span> <span class="font-black ml-1">{{ jobs_today.count }}</span></div>
+    <div><span class="text-gray-400 text-xs uppercase">Mbegu Leo:</span> <span class="font-black ml-1">{{ jobs_today|length }} jobs</span></div>
+    <div><span class="text-gray-400 text-xs uppercase">Cash Leo:</span> <span class="font-black ml-1 text-green-400">{{ income|floatformat:0 }} TZS</span></div>
+  </div>
+  <div class="flex gap-2">
+    <a href="/jobs/?date=leo" class="bg-white text-black px-4 py-2 rounded-full text-xs font-bold">Ona Leo →</a>
+    <a href="/report/daily/" class="bg-green-600 text-white px-4 py-2 rounded-full text-xs font-bold">🖨️ Print</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-bold">Kazi za Hivi Karibuni</h3>
+      <div class="flex gap-2">
+        <a href="/jobs/?date=leo" class="bg-gray-100 px-3 py-1.5 rounded-full text-xs font-bold">Leo</a>
+        <a href="/jobs/new/" class="bg-black text-white px-4 py-2 rounded-full text-sm">+ Kazi Mpya</a>
+      </div>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="text-xs text-gray-400 uppercase"><tr><th class="text-left py-2">Mteja / Chanzo</th><th>Mbegu</th><th>Mafuta</th><th>Malipo</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for j in jobs %}
+      <tr class="border-t hover:bg-gray-50">
+        <td class="py-3">
+          {% if j.service_type == 'OWNER' %}
+            <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-[11px] font-black">KIWANDA</span>
+            <div class="text-xs text-gray-400">{{ j.created_at|date:"H:i" }}</div>
+          {% else %}
+            <div class="font-bold">{{ j.customer.name|default:"Mteja" }}</div>
+            <div class="text-xs text-gray-400">{{ j.created_at|date:"d M H:i" }}</div>
+          {% endif %}
+        </td>
+        <td class="font-bold">{{ j.seed_weight_kg|floatformat:0 }}kg</td>
+        <td class="font-bold text-amber-600">{{ j.oil_produced_litre|floatformat:0 }}L</td>
+        <td class="font-bold text-xs">
+          {% if j.service_type == 'OWNER' %}
+            {{ j.service_cost|floatformat:0 }} TZS
+          {% else %}
+            {{ j.amount_paid|floatformat:0 }}/{{ j.service_cost|floatformat:0 }}
+          {% endif %}
+        </td>
+        <td>
+          {% if j.service_type == 'OWNER' %}
+            <span class="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600 font-bold">STOO</span>
+          {% else %}
+            <span class="px-2 py-1 rounded-full text-xs font-bold {% if j.payment_status == 'PAID' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">{{ j.payment_status }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="py-10 text-center text-gray-400">Hakuna kazi</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <a href="/jobs/?date=zote" class="block text-center mt-4 text-xs font-bold text-gray-500 hover:text-black">Ona Kazi Zote →</a>
+  </div>
+  
+  <div class="space-y-4">
+    <div class="bg-white rounded-2xl shadow-sm border p-6">
+      <h3 class="font-bold mb-3">Madeni Yote</h3>
+      <p class="text-3xl font-black text-red-600">{{ debt|floatformat:0 }} TZS</p>
+      <p class="text-xs text-gray-400 mt-2">Wateja wanaodaiwa (auto-update)</p>
+      <a href="/jobs/?date=zote" class="block mt-4 text-sm font-bold bg-red-50 text-red-700 px-3 py-2 rounded-full text-center">Fuatilia Madeni →</a>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border p-6">
+      <h3 class="font-bold mb-3">Tahadhari ya Stoo</h3>
+      {% for s in low_stocks %}
+        <div class="flex gap-2 text-sm text-red-600 bg-red-50 p-2 rounded-lg mb-2 font-bold"><span>⚠️</span> {{ s.product.name }} imebakia {{ s.quantity|floatformat:0 }}</div>
+      {% empty %}
+        <p class="text-sm text-green-600 font-bold">✓ Stoo iko sawa, hakuna tahadhari</p>
+      {% endfor %}
+      <a href="/stock/" class="block mt-3 text-xs font-bold text-gray-500">Angalia Stoo →</a>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border p-6">
+      <h3 class="font-bold mb-2 text-sm">Quick Actions</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <a href="/jobs/new/" class="bg-black text-white text-xs font-bold py-2 rounded-full text-center">+ Kazi Mpya</a>
+        <a href="/report/daily/" class="bg-green-600 text-white text-xs font-bold py-2 rounded-full text-center">🖨️ Print Leo</a>
+        <a href="/sales/new/" class="bg-gray-100 text-black text-xs font-bold py-2 rounded-full text-center">+ Mauzo</a>
+        <a href="/stock/" class="bg-gray-100 text-black text-xs font-bold py-2 rounded-full text-center">Stoo</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
