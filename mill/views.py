@@ -13,12 +13,9 @@ def to_f(x):
     try:
         if x is None or x == '':
             return 0.0
-        s = str(x).strip()
-        s = s.replace(',', '').replace('mf','').replace('MF','').replace('Mf','').replace('TZS','').replace('tzs','').replace('Tsh','').replace(':', '').strip()
+        s = str(x).strip().lower().replace(',', '').replace('mf','').replace('tzs','').replace('tsh','').replace(':', '').replace(' ', '')
         m = re.search(r'-?\d+(\.\d+)?', s)
-        if not m:
-            return 0.0
-        return float(m.group(0))
+        return float(m.group(0)) if m else 0.0
     except:
         return 0.0
 
@@ -93,7 +90,6 @@ def mill_list(request, mill_slug=None):
     if not request.user.is_authenticated: return redirect('/login/')
     mills = Mill.objects.filter(is_active=True).order_by('-id') if request.user.is_superuser else Mill.objects.filter(owner=request.user, is_active=True)
     return render(request, 'mill/mill_list.html', {'mills': mills, 'mill': get_mill(request, mill_slug), 'is_super': request.user.is_superuser})
-
 def mill_create(request, mill_slug=None):
     if request.method == 'POST':
         name = request.POST.get('name'); slug = name.lower().replace(' ', '-').replace('/', '-')
@@ -125,44 +121,53 @@ def job_create(request, mill_slug=None):
     mill = get_mill(request, mill_slug)
     if request.method == 'POST':
         form_type = request.POST.get('form_type', 'MTEJA')
-        try:
-            if form_type == 'KIWANDA':
-                seed = to_f(request.POST.get('seed_weight_owner'))
-                oil = to_f(request.POST.get('oil_produced_owner'))
-                cake = to_f(request.POST.get('cake_produced_owner'))
-                buy_cost = to_f(request.POST.get('buying_cost'))
-                MillingJob.objects.create(mill=mill, customer=None, seed_weight_kg=seed, oil_produced_litre=oil, cake_produced_kg=cake, service_type='KIWANDA', service_cost=buy_cost, amount_paid=buy_cost, payment_status='PAID')
-                if oil > 0:
-                    prod = Product.objects.filter(mill=mill, name__icontains='Mafuta ya Alizeti').first() or Product.objects.filter(mill=mill, type='OIL').first()
-                    if prod:
-                        st,_ = Stock.objects.get_or_create(mill=mill, product=prod, defaults={'quantity':0,'low_alert':10})
-                        st.quantity = to_f(st.quantity) + oil
-                        st.save()
-                        StockMovement.objects.create(mill=mill, product=prod, type='IN', quantity=oil, reason='Kiwanda - Kusaga')
-                if cake > 0:
-                    prod_c = Product.objects.filter(mill=mill, name__icontains='Mashudu').first()
-                    if prod_c:
-                        st,_ = Stock.objects.get_or_create(mill=mill, product=prod_c, defaults={'quantity':0,'low_alert':10})
-                        st.quantity = to_f(st.quantity) + cake
-                        st.save()
-                if buy_cost > 0:
-                    Expense.objects.create(mill=mill, category='MANUNUZI - Alizeti za Kiwanda', description=f'Manunuzi alizeti {seed:g}KG kwa kusaga kiwanda - Mafuta {oil:g}L', amount=buy_cost)
-            else:
-                cust = None; sel = request.POST.get('customer')
-                if sel: cust = Customer.objects.filter(id=sel, mill=mill).first()
-                name = request.POST.get('new_customer_name'); phone = request.POST.get('new_customer_phone')
-                if not cust and name and phone: cust,_ = Customer.objects.get_or_create(mill=mill, phone=phone, defaults={'name': name})
-                MillingJob.objects.create(mill=mill, customer=cust, seed_weight_kg=to_f(request.POST.get('seed_weight')), oil_produced_litre=to_f(request.POST.get('oil_produced')), cake_produced_kg=to_f(request.POST.get('cake_produced')), service_type=request.POST.get('service_type') or 'CASH', service_cost=to_f(request.POST.get('service_cost')), amount_paid=to_f(request.POST.get('amount_paid')), payment_status='PAID')
-        except Exception as e:
-            print(f"JOB CREATE ERROR: {e}")
-            messages.error(request, f'Error: {e}')
-            return render(request, 'mill/job_form.html', {'customers': Customer.objects.filter(mill=mill), 'mill': mill})
+        if form_type == 'KIWANDA':
+            seed = to_f(request.POST.get('seed_weight_owner'))
+            oil = to_f(request.POST.get('oil_produced_owner'))
+            cake = to_f(request.POST.get('cake_produced_owner'))
+            buy_cost = to_f(request.POST.get('buying_cost'))
+
+            # 1. KWANZA TENGEZA EXPENSE - HII NDIO MUHIMU
+            if buy_cost > 0:
+                Expense.objects.create(
+                    mill=mill,
+                    category='MANUNUZI',
+                    description=f'Manunuzi alizeti {seed:g}KG kwa kusaga kiwanda - Mafuta {oil:g}L',
+                    amount=buy_cost
+                )
+            
+            # 2. KISHA TENGEZA JOB
+            MillingJob.objects.create(
+                mill=mill, customer=None, 
+                seed_weight_kg=seed, oil_produced_litre=oil, cake_produced_kg=cake, 
+                service_type='KIWANDA', service_cost=buy_cost, amount_paid=buy_cost, payment_status='PAID'
+            )
+            
+            # 3. MWISHO STOCK
+            if oil > 0:
+                prod = Product.objects.filter(mill=mill, name__icontains='Mafuta ya Alizeti').first() or Product.objects.filter(mill=mill, type='OIL').first()
+                if prod:
+                    st,_ = Stock.objects.get_or_create(mill=mill, product=prod, defaults={'quantity':0,'low_alert':10})
+                    st.quantity = to_f(st.quantity) + oil
+                    st.save()
+                    StockMovement.objects.create(mill=mill, product=prod, type='IN', quantity=oil, reason='Kiwanda - Kusaga')
+            if cake > 0:
+                prod_c = Product.objects.filter(mill=mill, name__icontains='Mashudu').first()
+                if prod_c:
+                    st,_ = Stock.objects.get_or_create(mill=mill, product=prod_c, defaults={'quantity':0,'low_alert':10})
+                    st.quantity = to_f(st.quantity) + cake
+                    st.save()
+        else:
+            cust = None; sel = request.POST.get('customer')
+            if sel: cust = Customer.objects.filter(id=sel, mill=mill).first()
+            name = request.POST.get('new_customer_name'); phone = request.POST.get('new_customer_phone')
+            if not cust and name and phone: cust,_ = Customer.objects.get_or_create(mill=mill, phone=phone, defaults={'name': name})
+            MillingJob.objects.create(mill=mill, customer=cust, seed_weight_kg=to_f(request.POST.get('seed_weight')), oil_produced_litre=to_f(request.POST.get('oil_produced')), cake_produced_kg=to_f(request.POST.get('cake_produced')), service_type=request.POST.get('service_type') or 'CASH', service_cost=to_f(request.POST.get('service_cost')), amount_paid=to_f(request.POST.get('amount_paid')), payment_status='PAID')
         return redirect(f'/{mill.slug}/jobs/')
     return render(request, 'mill/job_form.html', {'customers': Customer.objects.filter(mill=mill), 'mill': mill})
 
 @mill_owner_required
 def job_delete(request, id, mill_slug=None): mill = get_mill(request, mill_slug); get_object_or_404(MillingJob, id=id, mill=mill).delete(); return redirect(f'/{mill.slug}/jobs/')
-
 @mill_owner_required
 def sale_list(request, mill_slug=None):
     mill = get_mill(request, mill_slug); year = int(request.GET.get('year', timezone.now().year)); month = int(request.GET.get('month', timezone.now().month)); day = request.GET.get('day'); sales_all = Sale.objects.filter(mill=mill); qs = sales_all.filter(created_at__year=year, created_at__month=month).order_by('-created_at')
@@ -170,16 +175,12 @@ def sale_list(request, mill_slug=None):
     total_month = sum([to_f(s.quantity)*to_f(s.price_per_unit) for s in sales_all.filter(created_at__year=year, created_at__month=month)]); total_filtered = sum([to_f(s.quantity)*to_f(s.price_per_unit) for s in qs]); _, num_days = calendar.monthrange(year, month); days_data = []
     for d in range(1, num_days+1): f_qs = sales_all.filter(created_at__year=year, created_at__month=month, created_at__day=d); days_data.append({'day': d, 'total': sum([to_f(s.quantity)*to_f(s.price_per_unit) for s in f_qs]), 'count': f_qs.count()})
     return render(request, 'mill/sale_list.html', {'sales': qs, 'total_month': total_month, 'total_filtered': total_filtered, 'days_data': days_data, 'selected_year': year, 'selected_month': month, 'selected_day': day, 'mill': mill, 'years': range(2023, timezone.now().year+2), 'months': range(1, 13)})
-
 @mill_owner_required
 def sale_create(request, mill_slug=None):
-    mill = get_mill(request, mill_slug)
-    products = Product.objects.filter(mill=mill).order_by('type', 'name')
-    stocks = Stock.objects.filter(mill=mill).select_related('product')
+    mill = get_mill(request, mill_slug); products = Product.objects.filter(mill=mill).order_by('type', 'name'); stocks = Stock.objects.filter(mill=mill).select_related('product')
     if request.method == 'POST':
         try:
-            prod = get_object_or_404(Product, id=request.POST.get('product'), mill=mill)
-            qty = to_f(request.POST.get('quantity')); price = to_f(request.POST.get('price'))
+            prod = get_object_or_404(Product, id=request.POST.get('product'), mill=mill); qty = to_f(request.POST.get('quantity')); price = to_f(request.POST.get('price'))
             st, _ = Stock.objects.get_or_create(mill=mill, product=prod, defaults={'quantity': 0, 'low_alert': 10})
             available = to_f(st.quantity)
             if qty <= 0: return render(request, 'mill/sale_form.html', {'products': products, 'stocks': stocks, 'mill': mill, 'error': 'Weka kiasi sahihi'})
@@ -191,11 +192,9 @@ def sale_create(request, mill_slug=None):
         except Exception as e:
             return render(request, 'mill/sale_form.html', {'products': products, 'stocks': stocks, 'mill': mill, 'error': str(e)})
     return render(request, 'mill/sale_form.html', {'products': products, 'stocks': stocks, 'mill': mill})
-
 @mill_owner_required
 def sale_edit(request, id, mill_slug=None):
-    mill = get_mill(request, mill_slug); sale = get_object_or_404(Sale, id=id, mill=mill)
-    products = Product.objects.filter(mill=mill).order_by('type', 'name'); stocks = Stock.objects.filter(mill=mill).select_related('product')
+    mill = get_mill(request, mill_slug); sale = get_object_or_404(Sale, id=id, mill=mill); products = Product.objects.filter(mill=mill).order_by('type', 'name'); stocks = Stock.objects.filter(mill=mill).select_related('product')
     if request.method == 'POST':
         try:
             old_prod = sale.product; old_qty = to_f(sale.quantity)
@@ -212,10 +211,8 @@ def sale_edit(request, id, mill_slug=None):
         except Exception as e:
             return render(request, 'mill/sale_form.html', {'products': products, 'stocks': stocks, 'mill': mill, 'sale': sale, 'error': str(e)})
     return render(request, 'mill/sale_form.html', {'products': products, 'stocks': stocks, 'mill': mill, 'sale': sale})
-
 @mill_owner_required
 def sale_delete(request, id, mill_slug=None): mill = get_mill(request, mill_slug); s = get_object_or_404(Sale, id=id, mill=mill); st, _ = Stock.objects.get_or_create(mill=mill, product=s.product, defaults={'quantity': 0, 'low_alert': 10}); st.quantity = to_f(st.quantity) + to_f(s.quantity); st.save(); s.delete(); return redirect(f'/{mill.slug}/sales/')
-
 @mill_owner_required
 def expense_list(request, mill_slug=None):
     mill = get_mill(request, mill_slug); year = int(request.GET.get('year', timezone.now().year)); month = int(request.GET.get('month', timezone.now().month)); day = request.GET.get('day'); expenses_all = Expense.objects.filter(mill=mill); qs = expenses_all.filter(created_at__year=year, created_at__month=month).order_by('-created_at')
@@ -224,11 +221,9 @@ def expense_list(request, mill_slug=None):
     total_month = sum([to_f(e.amount) for e in expenses_all.filter(created_at__year=year, created_at__month=month)]); total_filtered = sum([to_f(e.amount) for e in qs]); _, num_days = calendar.monthrange(year, month); days_data = []
     for d in range(1, num_days+1): f_qs = expenses_all.filter(created_at__year=year, created_at__month=month, created_at__day=d); days_data.append({'day': d, 'total': sum([to_f(e.amount) for e in f_qs]), 'count': f_qs.count()})
     return render(request, 'mill/expense_list.html', {'expenses': qs, 'total_month': total_month, 'total_filtered': total_filtered, 'days_data': days_data, 'selected_year': year, 'selected_month': month, 'selected_day': day, 'mill': mill, 'years': range(2023, timezone.now().year+2), 'months': range(1, 13)})
-
 @mill_owner_required
 def expense_delete(request, id, mill_slug=None): mill = get_mill(request, mill_slug); get_object_or_404(Expense, id=id, mill=mill).delete(); return redirect(f'/{mill.slug}/expenses/')
 def expense_edit(request, id, mill_slug=None): return redirect(f'/{mill_slug}/expenses/')
-
 @mill_owner_required
 def stock_view(request, mill_slug=None):
     mill = get_mill(request, mill_slug)
@@ -256,7 +251,6 @@ def stock_view(request, mill_slug=None):
     except Exception as e:
         print(f"Stock GET error: {e}"); stock_data = []
     return render(request, 'mill/stock.html', {'stock_data': stock_data, 'products': Product.objects.filter(mill=mill), 'suppliers': Supplier.objects.filter(mill=mill), 'movements': StockMovement.objects.filter(mill=mill).order_by('-created_at')[:20], 'purchases': Purchase.objects.filter(mill=mill).order_by('-created_at')[:20], 'mill': mill})
-
 @mill_owner_required
 def stock_reset(request, mill_slug=None): mill = get_mill(request, mill_slug); Stock.objects.filter(mill=mill).update(quantity=0); return redirect(f'/{mill.slug}/stock/')
 @mill_owner_required
@@ -273,7 +267,6 @@ def daily_report(request, mill_slug=None):
     for s in sales: s.total = to_f(s.quantity)*to_f(s.price_per_unit)
     expenses_total = sum([to_f(e.amount) for e in expenses])
     return render(request, 'mill/daily_report.html', {'mill': mill, 'target_date': target_date, 'jobs': jobs, 'jobs_mteja': jobs_mteja, 'jobs_kiwanda': jobs_kiwanda, 'sales': sales, 'expenses': expenses, 'sales_total': sales_total, 'expenses_total': expenses_total, 'total_mbegu': total_mbegu, 'total_oil': total_oil, 'total_cake': total_cake, 'total_mteja_mbegu': total_mteja_mbegu, 'total_mteja_oil': total_mteja_oil, 'total_mteja_cake': total_mteja_cake, 'total_mteja_cash': total_mteja_cash, 'total_mteja_service': total_mteja_service, 'total_mteja_debt': total_mteja_debt, 'total_kiwanda_mbegu': total_kiwanda_mbegu, 'total_oil_kiwanda': total_oil_kiwanda, 'total_cake_kiwanda': total_cake_kiwanda, 'gharama_kiwanda': gharama_kiwanda})
-
 @mill_owner_required
 def sale_reset_all(request, mill_slug=None): mill = get_mill(request, mill_slug); Sale.objects.filter(mill=mill).delete(); return redirect(f'/{mill.slug}/sales/')
 def hard_reset_all(request, mill_slug=None): return redirect(f'/{mill_slug}/stock/')
