@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, F
 from django.utils import timezone
 import calendar
+import re
 from .models import Customer, Product, Stock, MillingJob, Sale, Expense, Supplier, Purchase, StockMovement, Mill
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -9,8 +10,19 @@ from django.contrib import messages
 from functools import wraps
 
 def to_f(x):
-    try: return float(x or 0)
-    except: return 0.0
+    try:
+        if x is None or x == '':
+            return 0.0
+        s = str(x).strip().lower()
+        # Ondoa maneno ya kawaida: mf, tsh, tzs, :, ,, space
+        s = s.replace(',', '').replace('mf', '').replace('tsh', '').replace('tzs', '').replace(':', '').strip()
+        # Tafuta namba ya kwanza
+        m = re.search(r'-?\d+(\.\d+)?', s)
+        if not m:
+            return 0.0
+        return float(m.group(0))
+    except:
+        return 0.0
 
 def get_mill(request, mill_slug=None):
     if mill_slug:
@@ -79,7 +91,6 @@ def register_view(request, mill_slug=None):
     return render(request, 'mill/register.html')
 
 def logout_view(request, mill_slug=None): logout(request); return redirect('/')
-
 def mill_list(request, mill_slug=None):
     if not request.user.is_authenticated: return redirect('/login/')
     mills = Mill.objects.filter(is_active=True).order_by('-id') if request.user.is_superuser else Mill.objects.filter(owner=request.user, is_active=True)
@@ -117,15 +128,43 @@ def job_create(request, mill_slug=None):
     if request.method == 'POST':
         form_type = request.POST.get('form_type', 'MTEJA')
         if form_type == 'KIWANDA':
-            seed = to_f(request.POST.get('seed_weight_owner')); oil = to_f(request.POST.get('oil_produced_owner')); cake = to_f(request.POST.get('cake_produced_owner')); buy_cost = to_f(request.POST.get('buying_cost'))
-            MillingJob.objects.create(mill=mill, customer=None, seed_weight_kg=seed, oil_produced_litre=oil, cake_produced_kg=cake, service_type='KIWANDA', service_cost=buy_cost, amount_paid=buy_cost, payment_status='PAID')
+            seed = to_f(request.POST.get('seed_weight_owner'))
+            oil = to_f(request.POST.get('oil_produced_owner'))
+            cake = to_f(request.POST.get('cake_produced_owner'))
+            # FIX: soma buying_cost kutoka field zote zinazowezekana
+            buy_cost = to_f(
+                request.POST.get('buying_cost') or 
+                request.POST.get('buying_cost_owner') or
+                request.POST.get('cost') or
+                request.POST.get('gharama') or 0
+            )
+            print(f"KIWANDA DEBUG: seed={seed} oil={oil} cake={cake} buy_cost={buy_cost} POST={request.POST}")
+            job = MillingJob.objects.create(
+                mill=mill, customer=None, seed_weight_kg=seed, oil_produced_litre=oil, 
+                cake_produced_kg=cake, service_type='KIWANDA', 
+                service_cost=buy_cost, amount_paid=buy_cost, payment_status='PAID'
+            )
             if oil > 0:
                 prod = Product.objects.filter(mill=mill, name__icontains='Mafuta ya Alizeti').first() or Product.objects.filter(mill=mill, type='OIL').first()
-                if prod: st,_ = Stock.objects.get_or_create(mill=mill, product=prod, defaults={'quantity':0,'low_alert':10}); st.quantity = to_f(st.quantity) + oil; st.save(); StockMovement.objects.create(mill=mill, product=prod, type='IN', quantity=oil, reason='Kiwanda - Kusaga')
+                if prod: 
+                    st,_ = Stock.objects.get_or_create(mill=mill, product=prod, defaults={'quantity':0,'low_alert':10})
+                    st.quantity = to_f(st.quantity) + oil
+                    st.save()
+                    StockMovement.objects.create(mill=mill, product=prod, type='IN', quantity=oil, reason='Kiwanda - Kusaga')
             if cake > 0:
                 prod_c = Product.objects.filter(mill=mill, name__icontains='Mashudu').first()
-                if prod_c: st,_ = Stock.objects.get_or_create(mill=mill, product=prod_c, defaults={'quantity':0,'low_alert':10}); st.quantity = to_f(st.quantity) + cake; st.save()
-            if buy_cost > 0: Expense.objects.create(mill=mill, category='MANUNUZI - Alizeti za Kiwanda', description=f'Manunuzi alizeti {seed}KG kwa kusaga kiwanda', amount=buy_cost)
+                if prod_c: 
+                    st,_ = Stock.objects.get_or_create(mill=mill, product=prod_c, defaults={'quantity':0,'low_alert':10})
+                    st.quantity = to_f(st.quantity) + cake
+                    st.save()
+            # FIX: Hata kama gharama ni 0, tengeneza job, lakini kama >0 ingiza Matumizi
+            if buy_cost > 0: 
+                Expense.objects.create(
+                    mill=mill, 
+                    category='MANUNUZI - Alizeti za Kiwanda', 
+                    description=f'Manunuzi alizeti {seed:g}KG kwa kusaga kiwanda - Mafuta {oil:g}L', 
+                    amount=buy_cost
+                )
         else:
             cust = None; sel = request.POST.get('customer')
             if sel: cust = Customer.objects.filter(id=sel, mill=mill).first()
@@ -146,7 +185,6 @@ def sale_list(request, mill_slug=None):
     for d in range(1, num_days+1): f_qs = sales_all.filter(created_at__year=year, created_at__month=month, created_at__day=d); days_data.append({'day': d, 'total': sum([to_f(s.quantity)*to_f(s.price_per_unit) for s in f_qs]), 'count': f_qs.count()})
     return render(request, 'mill/sale_list.html', {'sales': qs, 'total_month': total_month, 'total_filtered': total_filtered, 'days_data': days_data, 'selected_year': year, 'selected_month': month, 'selected_day': day, 'mill': mill, 'years': range(2023, timezone.now().year+2), 'months': range(1, 13)})
 
-# ===== MAUZO FIXED - DUMU ZOTE ZINAONEKANA =====
 @mill_owner_required
 def sale_create(request, mill_slug=None):
     mill = get_mill(request, mill_slug)
@@ -230,7 +268,6 @@ def expense_list(request, mill_slug=None):
 def expense_delete(request, id, mill_slug=None): mill = get_mill(request, mill_slug); get_object_or_404(Expense, id=id, mill=mill).delete(); return redirect(f'/{mill.slug}/expenses/')
 def expense_edit(request, id, mill_slug=None): return redirect(f'/{mill_slug}/expenses/')
 
-# ===== STOCK VIEW - MALIPO YOTE YA STOO YANAENDA MATUMIZI =====
 @mill_owner_required
 def stock_view(request, mill_slug=None):
     mill = get_mill(request, mill_slug)
