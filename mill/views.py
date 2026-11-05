@@ -1,5 +1,3 @@
-# COPY HII YOTE - mill/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, F
 from django.utils import timezone
@@ -81,6 +79,7 @@ def register_view(request, mill_slug=None):
     return render(request, 'mill/register.html')
 
 def logout_view(request, mill_slug=None): logout(request); return redirect('/')
+
 def mill_list(request, mill_slug=None):
     if not request.user.is_authenticated: return redirect('/login/')
     mills = Mill.objects.filter(is_active=True).order_by('-id') if request.user.is_superuser else Mill.objects.filter(owner=request.user, is_active=True)
@@ -101,15 +100,47 @@ def dashboard(request, mill_slug=None):
     income_sales = sum([to_f(s.quantity)*to_f(s.price_per_unit) for s in sale_qs]); income_jobs = job_qs.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0; total_exp = expense_qs.aggregate(Sum('amount'))['amount__sum'] or 0; today = timezone.now().date()
     return render(request, 'mill/dashboard.html', {'mill': mill, 'oil_stock': oil, 'seed_stock': seed, 'cake_stock': cake, 'income': income_sales + to_f(income_jobs), 'expense': total_exp, 'profit': (income_sales + to_f(income_jobs)) - to_f(total_exp), 'low_stocks': stock_qs.filter(quantity__lte=F('low_alert')), 'jobs': job_qs.order_by('-created_at')[:10], 'jobs_today': job_qs.filter(created_at__date=today), 'today': today, 'stock_data': stock_qs.select_related('product')})
 
+# ===== FIX 1: JOB LIST NA STATS ZA JUU =====
 @mill_owner_required
 def job_list(request, mill_slug=None):
-    mill = get_mill(request, mill_slug); year = int(request.GET.get('year', timezone.now().year)); month = int(request.GET.get('month', timezone.now().month)); day = request.GET.get('day')
-    qs = MillingJob.objects.filter(mill=mill, created_at__year=year, created_at__month=month).order_by('-created_at')
-    if day: qs = qs.filter(created_at__day=int(day))
-    _, num_days = calendar.monthrange(year, month); days_data = [{'day': d, 'count': MillingJob.objects.filter(mill=mill, created_at__year=year, created_at__month=month, created_at__day=d).count()} for d in range(1, num_days+1)]
-    return render(request, 'mill/job_list.html', {'jobs': qs, 'mill': mill, 'selected_year': year, 'selected_month': month, 'selected_day': day, 'days_data': days_data, 'years': range(2023, timezone.now().year+2), 'months': range(1, 13)})
+    mill = get_mill(request, mill_slug)
+    filter_date = request.GET.get('date', 'leo')
+    today = timezone.now().date()
+    qs_all = MillingJob.objects.filter(mill=mill)
+    if filter_date == 'leo':
+        qs = qs_all.filter(created_at__date=today).order_by('-created_at')
+    elif filter_date == 'jana':
+        yest = today - timezone.timedelta(days=1)
+        qs = qs_all.filter(created_at__date=yest).order_by('-created_at')
+    elif filter_date == 'wiki':
+        start = today - timezone.timedelta(days=today.weekday())
+        qs = qs_all.filter(created_at__date__gte=start).order_by('-created_at')
+    else:
+        qs = qs_all.order_by('-created_at')
 
-# ===== HII NDIO FIX KUU =====
+    today_jobs = qs_all.filter(created_at__date=today)
+    today_count = today_jobs.count()
+    today_kg = sum([to_f(j.seed_weight_kg) for j in today_jobs])
+    today_oil = sum([to_f(j.oil_produced_litre) for j in today_jobs])
+    today_cash = sum([to_f(j.amount_paid) for j in today_jobs.filter(customer__isnull=False)])
+    today_debt = sum([to_f(j.service_cost) - to_f(j.amount_paid) for j in today_jobs.filter(customer__isnull=False)])
+    total_cash = sum([to_f(j.amount_paid) for j in qs])
+    total_service = sum([to_f(j.service_cost) for j in qs])
+
+    year = today.year; month = today.month
+    _, num_days = calendar.monthrange(year, month)
+    days_data = []
+    return render(request, 'mill/job_list.html', {
+        'jobs': qs, 'mill': mill, 'today': today,
+        'today_count': today_count, 'today_kg': today_kg, 'today_oil': today_oil,
+        'today_cash': today_cash, 'today_debt': today_debt,
+        'total_cash': total_cash, 'total_service': total_service,
+        'filter_date': filter_date,
+        'selected_year': year, 'selected_month': month, 'selected_day': None,
+        'days_data': days_data, 'years': range(2023, timezone.now().year+2), 'months': range(1, 13)
+    })
+
+# ===== FIX 2: JOB CREATE KIWANDA + MTEJA =====
 @mill_owner_required
 def job_create(request, mill_slug=None):
     mill = get_mill(request, mill_slug)
@@ -145,6 +176,7 @@ def job_create(request, mill_slug=None):
 
 @mill_owner_required
 def job_delete(request, id, mill_slug=None): mill = get_mill(request, mill_slug); get_object_or_404(MillingJob, id=id, mill=mill).delete(); return redirect(f'/{mill.slug}/jobs/')
+
 @mill_owner_required
 def sale_list(request, mill_slug=None):
     mill = get_mill(request, mill_slug); year = int(request.GET.get('year', timezone.now().year)); month = int(request.GET.get('month', timezone.now().month)); day = request.GET.get('day'); sales_all = Sale.objects.filter(mill=mill); qs = sales_all.filter(created_at__year=year, created_at__month=month).order_by('-created_at')
@@ -166,6 +198,7 @@ def sale_create(request, mill_slug=None):
 @mill_owner_required
 def sale_delete(request, id, mill_slug=None): mill = get_mill(request, mill_slug); s = get_object_or_404(Sale, id=id, mill=mill); st, _ = Stock.objects.get_or_create(mill=mill, product=s.product, defaults={'quantity': 0, 'low_alert': 10}); st.quantity += to_f(s.quantity); st.save(); s.delete(); return redirect(f'/{mill.slug}/sales/')
 def sale_edit(request, id, mill_slug=None): return redirect(f'/{mill_slug}/sales/')
+
 @mill_owner_required
 def expense_list(request, mill_slug=None):
     mill = get_mill(request, mill_slug); year = int(request.GET.get('year', timezone.now().year)); month = int(request.GET.get('month', timezone.now().month)); day = request.GET.get('day'); expenses_all = Expense.objects.filter(mill=mill); qs = expenses_all.filter(created_at__year=year, created_at__month=month).order_by('-created_at')
@@ -178,6 +211,7 @@ def expense_list(request, mill_slug=None):
 @mill_owner_required
 def expense_delete(request, id, mill_slug=None): mill = get_mill(request, mill_slug); get_object_or_404(Expense, id=id, mill=mill).delete(); return redirect(f'/{mill.slug}/expenses/')
 def expense_edit(request, id, mill_slug=None): return redirect(f'/{mill_slug}/expenses/')
+
 @mill_owner_required
 def stock_view(request, mill_slug=None):
     mill = get_mill(request, mill_slug)
@@ -195,6 +229,7 @@ def stock_reset(request, mill_slug=None): mill = get_mill(request, mill_slug); S
 @mill_owner_required
 def stock_movement_reset(request, mill_slug=None): mill = get_mill(request, mill_slug); StockMovement.objects.filter(mill=mill).delete(); return redirect(f'/{mill.slug}/stock/')
 def owner_milling_create(request, mill_slug=None): return redirect(f'/{mill_slug}/jobs/')
+
 @mill_owner_required
 def daily_report(request, mill_slug=None):
     mill = get_mill(request, mill_slug); year = int(request.GET.get('year', timezone.now().year)); month = int(request.GET.get('month', timezone.now().month)); day = int(request.GET.get('day', timezone.now().day)); from datetime import date

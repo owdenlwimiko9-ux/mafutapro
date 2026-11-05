@@ -71,7 +71,7 @@
       <tr class="border-t hover:bg-gray-50">
         <td class="p-3 font-black text-gray-400">#{{ j.id }}</td>
         <td class="font-bold">
-          {% if j.service_type == 'OWNER' %}
+          {% if j.service_type == 'KIWANDA' or j.service_type == 'OWNER' %}
             <span class="bg-green-600 text-white px-2.5 py-1 rounded-full text-[11px] font-black">KIWANDA</span>
             <br><span class="text-[11px] text-gray-400 font-normal">{{ j.cake_produced_kg|floatformat:0 }}kg mashudu</span>
           {% else %}
@@ -81,7 +81,7 @@
         <td class="font-black">{{ j.seed_weight_kg|floatformat:0 }}kg</td>
         <td class="font-black text-amber-600">{{ j.oil_produced_litre|floatformat:0 }}L</td>
         <td>
-          {% if j.service_type == 'OWNER' %}
+          {% if j.service_type == 'KIWANDA' or j.service_type == 'OWNER' %}
             {% if j.service_cost > 0 %}
               <span class="text-xs font-black">{{ j.service_cost|floatformat:0 }} TZS</span><br><span class="text-[10px] text-gray-400">Gharama</span>
             {% else %}
