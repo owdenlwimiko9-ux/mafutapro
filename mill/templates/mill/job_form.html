@@ -1,80 +1,97 @@
 {% extends 'mill/base.html' %}
 {% block content %}
-<div class="max-w-3xl mx-auto">
-<h2 class="text-2xl font-black mb-6">Kazi Mpya ya Kukamua</h2>
+<div class="max-w-2xl mx-auto">
+<div class="bg-white rounded-2xl border p-6">
+<h2 class="text-xl font-black mb-4">Kazi Mpya ya Kukamua</h2>
 
-<!-- TABS -->
-<div class="flex bg-gray-100 p-1 rounded-xl mb-6 w-fit">
-<button onclick="showTab('mteja')" id="btn-mteja" class="px-6 py-2 rounded-lg bg-black text-white font-bold text-sm">Mteja Analeta</button>
-<button onclick="showTab('kiwanda')" id="btn-kiwanda" class="px-6 py-2 rounded-lg text-gray-500 font-bold text-sm">Alizeti za Kiwanda (Kuuza)</button>
+<div class="flex gap-2 mb-6">
+<button type="button" onclick="showMteja()" id="btnMteja" class="flex-1 py-2 rounded-full font-bold text-sm bg-black text-white">Mteja Analeta</button>
+<button type="button" onclick="showKiwanda()" id="btnKiwanda" class="flex-1 py-2 rounded-full font-bold text-sm bg-gray-100">Alizeti za Kiwanda (Kuuza)</button>
 </div>
 
-<!-- FORM 1: MTEJA -->
-<form method="post" action="" id="form-mteja" class="bg-white p-8 rounded-2xl shadow-sm border space-y-5">
+<!-- MTEJA FORM -->
+<form method="POST" id="formMteja" class="space-y-3">
 {% csrf_token %}
 <input type="hidden" name="form_type" value="MTEJA">
+<div class="grid grid-cols-2 gap-3">
 <div>
-<label class="text-xs font-bold text-gray-400 uppercase">Mteja Aliyepo</label>
-<select name="customer" class="w-full border border-gray-200 p-3 rounded-xl mt-1">
-<option value="">-- Chagua au andika mpya chini --</option>
-{% for c in customers %}<option value="{{c.id}}">{{c.name}} - {{c.phone}}</option>{% endfor %}
-</select>
+<label class="text-xs font-bold uppercase text-gray-500">Jina la Mteja</label>
+<input type="text" name="new_customer_name" class="w-full border rounded-xl p-3">
 </div>
-<div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
-<input name="new_customer_name" placeholder="Jina la mteja mpya" class="border p-3 rounded-xl">
-<input name="new_customer_phone" placeholder="Simu: 07xx" class="border p-3 rounded-xl">
-</div>
-<div class="grid grid-cols-3 gap-4">
-<div><label class="text-xs font-bold">Mbegu KG</label><input name="seed_weight" type="number" step="0.01" required class="w-full border p-3 rounded-xl mt-1"></div>
-<div><label class="text-xs font-bold">Mafuta L</label><input name="oil_produced" type="number" step="0.01" class="w-full border p-3 rounded-xl mt-1 bg-yellow-50"></div>
-<div><label class="text-xs font-bold">Mashudu KG</label><input name="cake_produced" type="number" step="0.01" class="w-full border p-3 rounded-xl mt-1"></div>
-</div>
-<div class="grid grid-cols-2 gap-4">
 <div>
-<label class="text-xs font-bold text-gray-400 uppercase">Aina ya Huduma</label>
-<select name="service_type" class="w-full border p-3 rounded-xl mt-1">
-<option value="CASH">Cash Payment</option>
-<option value="SHARE">Oil Sharing (Mwaga)</option>
-<option value="MASHUDU">Tunabaki na Mashudu</option>
-</select>
-</div>
-<div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
-<p class="text-[11px] font-bold text-blue-600 uppercase">Malipo Auto</p>
-<p class="text-xs text-gray-600 mt-1">Kama 5000/8000 = <b class="text-red-600">DENI 3000</b></p>
+<label class="text-xs font-bold uppercase text-gray-500">Simu</label>
+<input type="text" name="new_customer_phone" class="w-full border rounded-xl p-3" placeholder="07...">
 </div>
 </div>
-<div class="grid grid-cols-2 gap-4">
-<div><label class="text-xs font-bold">Gharama (TZS)</label><input name="service_cost" type="number" placeholder="mf: 8000" required class="w-full border p-3 rounded-xl mt-1"></div>
-<div><label class="text-xs font-bold">Amelipa (TZS)</label><input name="amount_paid" type="number" placeholder="mf: 5000" required class="w-full border p-3 rounded-xl mt-1 bg-green-50 font-bold"></div>
+<div class="grid grid-cols-3 gap-3">
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Alizeti KG</label>
+<input type="number" step="0.01" name="seed_weight" class="w-full border rounded-xl p-3 font-bold" required>
 </div>
-<button class="w-full bg-black text-white py-4 rounded-xl font-bold">Hifadhi Kazi ya Mteja</button>
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Mafuta L</label>
+<input type="number" step="0.01" name="oil_produced" class="w-full border rounded-xl p-3 font-bold">
+</div>
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Mashudu KG</label>
+<input type="number" step="0.01" name="cake_produced" class="w-full border rounded-xl p-3">
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Gharama ya Kukamua</label>
+<input type="number" step="0.01" name="service_cost" class="w-full border rounded-xl p-3 font-bold" required>
+</div>
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Alicholipa</label>
+<input type="number" step="0.01" name="amount_paid" class="w-full border rounded-xl p-3 font-bold" required>
+</div>
+</div>
+<button class="w-full bg-black text-white py-3 rounded-full font-black">Hifadhi Kazi ya Mteja</button>
 </form>
 
-<!-- FORM 2: KIWANDA -->
-<form method="post" action="" id="form-kiwanda" class="bg-white p-8 rounded-2xl shadow-sm border space-y-5 hidden">
+<!-- KIWANDA FORM -->
+<form method="POST" id="formKiwanda" class="space-y-3 hidden">
 {% csrf_token %}
 <input type="hidden" name="form_type" value="KIWANDA">
-<div class="bg-yellow-50 border border-yellow-200 p-3 rounded-xl text-sm">Hii ni alizeti zako mwenyewe - ukasaga ili uuze mafuta. Itaingia moja kwa moja kwenye <b>Stock ya Mafuta ya Kuuza</b></div>
-<div class="grid grid-cols-3 gap-4">
-<div><label class="text-xs font-bold">Alizeti Zako KG</label><input name="seed_weight_owner" type="number" step="0.01" required class="w-full border p-3 rounded-xl mt-1"></div>
-<div><label class="text-xs font-bold">Mafuta L</label><input name="oil_produced_owner" type="number" step="0.01" required class="w-full border p-3 rounded-xl mt-1 bg-yellow-50 font-bold"></div>
-<div><label class="text-xs font-bold">Mashudu KG</label><input name="cake_produced_owner" type="number" step="0.01" class="w-full border p-3 rounded-xl mt-1"></div>
+<p class="text-xs bg-amber-50 border border-amber-200 p-3 rounded-xl">Hii ni alizeti zako mwenyewe - ukasaga ili uuze mafuta. Itaingia moja kwa moja kwenye Stock ya Mafuta ya Kuuza</p>
+<div class="grid grid-cols-3 gap-3">
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Alizeti Zako KG</label>
+<input type="number" step="0.01" name="seed_weight_owner" class="w-full border rounded-xl p-3 font-bold" required>
 </div>
-<div><label class="text-xs font-bold">Gharama ya Kununua Alizeti (TZS)</label><input name="buying_cost" type="number" placeholder="mf: 150000" class="w-full border p-3 rounded-xl mt-1"></div>
-<button class="w-full bg-yellow-500 text-black py-4 rounded-xl font-black">Hifadhi - Ingiza Kwenye Stock ya Kuuza</button>
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Mafuta L</label>
+<input type="number" step="0.01" name="oil_produced_owner" class="w-full border rounded-xl p-3 font-bold" required>
+</div>
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Mashudu KG</label>
+<input type="number" step="0.01" name="cake_produced_owner" class="w-full border rounded-xl p-3">
+</div>
+</div>
+<div>
+<label class="text-xs font-bold uppercase text-gray-500">Gharama ya Kununua Alizeti (TZS) *</label>
+<input type="text" name="buying_cost" class="w-full border rounded-xl p-3 font-bold" placeholder="150000" required>
+<p class="text-[11px] text-gray-500 mt-1">Andika namba tu, mf: 150000</p>
+</div>
+<button class="w-full bg-orange-500 text-white py-3 rounded-full font-black">Hifadhi Kiwanda - Ingiza Kwenye Stock ya Kuuza</button>
 </form>
 
+</div>
 </div>
 
 <script>
-function showTab(tab){
-  document.getElementById('form-mteja').classList.add('hidden');
-  document.getElementById('form-kiwanda').classList.add('hidden');
-  document.getElementById('btn-mteja').className = "px-6 py-2 rounded-lg text-gray-500 font-bold text-sm";
-  document.getElementById('btn-kiwanda').className = "px-6 py-2 rounded-lg text-gray-500 font-bold text-sm";
-  document.getElementById('form-'+tab).classList.remove('hidden');
-  document.getElementById('btn-'+tab).className = "px-6 py-2 rounded-lg bg-black text-white font-bold text-sm";
-  if(tab=='kiwanda') document.getElementById('btn-kiwanda').className = "px-6 py-2 rounded-lg bg-yellow-400 text-black font-bold text-sm";
+function showMteja(){
+  document.getElementById('formMteja').classList.remove('hidden');
+  document.getElementById('formKiwanda').classList.add('hidden');
+  document.getElementById('btnMteja').className='flex-1 py-2 rounded-full font-bold text-sm bg-black text-white';
+  document.getElementById('btnKiwanda').className='flex-1 py-2 rounded-full font-bold text-sm bg-gray-100';
+}
+function showKiwanda(){
+  document.getElementById('formKiwanda').classList.remove('hidden');
+  document.getElementById('formMteja').classList.add('hidden');
+  document.getElementById('btnKiwanda').className='flex-1 py-2 rounded-full font-bold text-sm bg-black text-white';
+  document.getElementById('btnMteja').className='flex-1 py-2 rounded-full font-bold text-sm bg-gray-100';
 }
 </script>
 {% endblock %}
