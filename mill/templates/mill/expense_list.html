@@ -5,61 +5,97 @@
   <div class="flex justify-between items-center mb-4">
     <div>
       <h2 class="text-xl font-black">Matumizi</h2>
-      <p class="text-[11px] text-gray-500 font-bold mt-0.5">{{ selected_day|default:"Mwezi" }}/{{ selected_month }}/{{ selected_year }} • <span class="text-black">{{ total_filtered|floatformat:0 }} TZS</span></p>
+      <p class="text-[11px] text-gray-500 font-bold mt-0.5">
+        {% if selected_day %}Siku {{ selected_day }}/{% endif %}{{ selected_month }}/{{ selected_year }} • 
+        <span class="text-black">{{ total_filtered|floatformat:0 }} TZS</span>
+        <span class="text-gray-400 font-normal ml-1">/ Mwezi {{ total_month|floatformat:0 }}</span>
+      </p>
     </div>
-    <form method="POST" class="flex gap-1">
+    <form method="POST" class="flex gap-1.5 items-center">
       {% csrf_token %}
-      <input name="description" placeholder="Maelezo" class="border bg-white rounded-full px-3 py-1.5 text-xs font-bold w-24 outline-none" required>
-      <input name="amount" type="number" placeholder="TZS" class="border bg-white rounded-full px-3 py-1.5 text-xs font-black w-20 outline-none" required>
-      <button class="bg-black text-white w-8 h-8 rounded-full text-xs">+</button>
+      <input name="description" placeholder="Maelezo" class="border bg-white rounded-full px-3 py-2 text-xs font-bold w-28 outline-none focus:border-black transition" required>
+      <input name="amount" type="number" placeholder="TZS" class="border bg-white rounded-full px-3 py-2 text-xs font-black w-24 outline-none focus:border-black transition" required>
+      <button class="bg-black text-white w-9 h-9 rounded-full text-sm font-black hover:bg-gray-800 transition">+</button>
     </form>
   </div>
 
-  <!-- COMPACT MONTH BAR -->
-  <div class="bg-white rounded-2xl border px-3 py-2.5 flex justify-between items-center mb-3">
-    <a href="/{{ mill.slug }}/expenses/?year={% if selected_month == 1 %}{{ selected_year|add:-1 }}{% else %}{{ selected_year }}{% endif %}&month={% if selected_month == 1 %}12{% else %}{{ selected_month|add:-1 }}{% endif %}" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-chevron-left text-[10px]"></i></a>
-    <div class="flex items-center gap-2">
-      <span class="text-xs font-black">{% if selected_month == 1 %}Jan{% elif selected_month == 2 %}Feb{% elif selected_month == 3 %}Mar{% elif selected_month == 4 %}Apr{% elif selected_month == 5 %}Mei{% elif selected_month == 6 %}Jun{% elif selected_month == 7 %}Jul{% elif selected_month == 8 %}Ago{% elif selected_month == 9 %}Sep{% elif selected_month == 10 %}Okt{% elif selected_month == 11 %}Nov{% else %}Des{% endif %} {{ selected_year }}</span>
-      <a href="/{{ mill.slug }}/expenses/?year={{ selected_year }}&month={{ selected_month }}" class="text-[10px] font-black bg-black text-white px-2.5 py-1 rounded-full">{{ total_month|floatformat:0 }}</a>
+  <!-- MONTH NAV - COMPACT -->
+  <div class="bg-white rounded-2xl border px-4 py-3 flex justify-between items-center mb-3">
+    <a href="/{{ mill.slug }}/expenses/?year={% if selected_month == 1 %}{{ selected_year|add:-1 }}{% else %}{{ selected_year }}{% endif %}&month={% if selected_month == 1 %}12{% else %}{{ selected_month|add:-1 }}{% endif %}" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-black hover:text-white transition">
+      <i class="fa-solid fa-chevron-left text-[10px]"></i>
+    </a>
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-black tracking-wide">
+        {% if selected_month == 1 %}Januari{% elif selected_month == 2 %}Februari{% elif selected_month == 3 %}Machi{% elif selected_month == 4 %}Aprili{% elif selected_month == 5 %}Mei{% elif selected_month == 6 %}Juni{% elif selected_month == 7 %}Julai{% elif selected_month == 8 %}Agosti{% elif selected_month == 9 %}Septemba{% elif selected_month == 10 %}Oktoba{% elif selected_month == 11 %}Novemba{% else %}Desemba{% endif %} {{ selected_year }}
+      </span>
+      <span class="text-[11px] font-black bg-black text-white px-3 py-1 rounded-full">{{ total_month|floatformat:0 }} TZS</span>
     </div>
-    <a href="/{{ mill.slug }}/expenses/?year={% if selected_month == 12 %}{{ selected_year|add:1 }}{% else %}{{ selected_year }}{% endif %}&month={% if selected_month == 12 %}1{% else %}{{ selected_month|add:1 }}{% endif %}" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-chevron-right text-[10px]"></i></a>
+    <a href="/{{ mill.slug }}/expenses/?year={% if selected_month == 12 %}{{ selected_year|add:1 }}{% else %}{{ selected_year }}{% endif %}&month={% if selected_month == 12 %}1{% else %}{{ selected_month|add:1 }}{% endif %}" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-black hover:text-white transition">
+      <i class="fa-solid fa-chevron-right text-[10px]"></i>
+    </a>
   </div>
 
-  <!-- COMPACT KALENDA - NDOGO SANA -->
+  <!-- KALENDA - COMPACT & CLEAN -->
   <div class="bg-white rounded-2xl border p-3 mb-4">
     <div class="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
       {% for d in days_data %}
       <a href="/{{ mill.slug }}/expenses/?year={{ selected_year }}&month={{ selected_month }}&day={{ d.day }}" 
-         class="flex-shrink-0 w-[52px] h-[62px] rounded-xl flex flex-col items-center justify-center border transition
-         {% if selected_day == d.day|stringformat:'s' %}bg-black text-white border-black{% elif d.total > 0 %}bg-white border-black shadow-sm{% else %}bg-gray-50 border-gray-100 text-gray-400{% endif %}">
-        <span class="text-[10px] font-bold uppercase opacity-60">Siku</span>
-        <span class="text-[16px] font-black leading-none mt-0.5">{{ d.day }}</span>
-        <span class="text-[9px] font-black mt-1 {% if selected_day == d.day|stringformat:'s' %}text-white{% elif d.total > 0 %}text-green-700{% else %}text-gray-300{% endif %}">
-          {% if d.total > 0 %}{{ d.total|floatformat:0 }}{% else %}•{% endif %}
+         class="flex-shrink-0 w-[52px] h-[64px] rounded-xl flex flex-col items-center justify-center border transition-all
+         {% if selected_day == d.day|stringformat:'s' or selected_day == d.day %}bg-black text-white border-black shadow-lg scale-105{% elif d.total > 0 %}bg-white border-gray-900 text-black shadow-sm{% else %}bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-300{% endif %}">
+        <span class="text-[9px] font-bold uppercase opacity-60 tracking-wide">S{{ d.day }}</span>
+        <span class="text-[16px] font-black leading-none mt-1">{{ d.day }}</span>
+        <span class="text-[9px] font-black mt-1.5 px-1.5 py-0.5 rounded-full {% if selected_day == d.day|stringformat:'s' or selected_day == d.day %}bg-white/20 text-white{% elif d.total > 0 %}bg-black text-white{% else %}text-gray-300{% endif %}">
+          {% if d.total > 0 %}{{ d.total|floatformat:0|slice:":4" }}{% else %}•{% endif %}
         </span>
       </a>
       {% endfor %}
     </div>
   </div>
 
-  <!-- LIST NDOGO -->
-  <div class="bg-white rounded-2xl border divide-y">
-    {% for e in expenses %}
-    <div class="flex justify-between items-center px-4 py-3">
-      <div>
-        <p class="text-xs font-black">{{ e.description|default:e.category }}</p>
-        <p class="text-[10px] text-gray-400 font-bold">{{ e.created_at|date:"H:i" }} • {{ e.category }}</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-black">{{ e.amount|floatformat:0 }}</span>
-        <a href="/{{ mill.slug }}/expenses/{{ e.id }}/delete/" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark text-[10px]"></i></a>
-      </div>
+  <!-- LIST - COMPACT & MODERN -->
+  <div class="bg-white rounded-2xl border overflow-hidden">
+    <div class="px-4 py-3 bg-gray-50 border-b flex justify-between items-center">
+      <p class="text-[11px] font-black uppercase tracking-wide text-gray-600">
+        {% if selected_day %}Matumizi ya siku {{ selected_day }}{% else %}Matumizi yote{% endif %} • {{ expenses.count }}
+      </p>
+      {% if selected_day %}
+      <a href="/{{ mill.slug }}/expenses/?year={{ selected_year }}&month={{ selected_month }}" class="text-[10px] font-black bg-white border px-2.5 py-1 rounded-full hover:bg-black hover:text-white transition">Ona zote</a>
+      {% endif %}
     </div>
-    {% empty %}
-    <div class="p-8 text-center"><p class="text-xs font-bold text-gray-400">Hakuna tarehe hii</p></div>
-    {% endfor %}
+    
+    <div class="divide-y divide-gray-100">
+      {% for e in expenses %}
+      <div class="flex justify-between items-center px-4 py-3.5 hover:bg-gray-50 transition group">
+        <div class="flex-1">
+          <p class="text-[13px] font-bold leading-tight">{{ e.description|default:e.category }}</p>
+          <p class="text-[10px] text-gray-400 font-bold mt-1 flex items-center gap-2">
+            <span>{{ e.created_at|date:"H:i" }}</span>
+            <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+            <span class="uppercase tracking-wide">{{ e.category }}</span>
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-[13px] font-black">{{ e.amount|floatformat:0 }} <span class="text-[10px] font-bold text-gray-400">TZS</span></span>
+          <a href="/{{ mill.slug }}/expenses/{{ e.id }}/delete/" class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <div class="p-10 text-center">
+        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i class="fa-solid fa-receipt text-gray-400 text-sm"></i>
+        </div>
+        <p class="text-xs font-bold text-gray-400">Hakuna matumizi tarehe hii</p>
+        <p class="text-[11px] text-gray-300 mt-1">Ongeza matumizi juu</p>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
 
-<style>.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}</style>
+<style>
+.scrollbar-hide::-webkit-scrollbar{display:none}
+.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+</style>
 {% endblock %}
