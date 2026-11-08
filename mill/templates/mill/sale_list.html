@@ -1,67 +1,95 @@
 {% extends 'mill/base.html' %}
 {% block content %}
-<div class="max-w-3xl mx-auto">
-  <!-- Header ndogo -->
-  <div class="flex justify-between items-center mb-4">
+<div class="max-w-4xl mx-auto space-y-4">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
     <div>
       <h2 class="text-xl font-black">Mauzo</h2>
-      <p class="text-[11px] text-gray-500 font-bold mt-0.5">{{ selected_day|default:"Mwezi" }}/{{ selected_month }}/{{ selected_year }} • <span class="text-black">{{ total_filtered|floatformat:0 }} TZS</span></p>
+      <p class="text-xs text-gray-500">Mwezi/{{ selected_month }}/{{ selected_year }} • {{ total_month|floatformat:0 }} TZS</p>
     </div>
-    <a href="/{{ mill.slug }}/sales/create/" class="bg-black text-white px-4 py-1.5 rounded-full text-xs font-black">+ Mauzo</a>
+    <a href="/{{ mill.slug }}/sales/create/" class="bg-black text-white px-5 py-2.5 rounded-full text-sm font-black">+ Mauzo</a>
   </div>
 
-  <!-- Bar ya mwezi - ndogo -->
-  <div class="bg-white rounded-2xl border px-3 py-2.5 flex justify-between items-center mb-3">
-    <a href="/{{ mill.slug }}/sales/?year={% if selected_month == 1 %}{{ selected_year|add:-1 }}{% else %}{{ selected_year }}{% endif %}&month={% if selected_month == 1 %}12{% else %}{{ selected_month|add:-1 }}{% endif %}" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-black hover:text-white"><i class="fa-solid fa-chevron-left text-[10px]"></i></a>
-    <div class="flex items-center gap-2">
-      <span class="text-xs font-black">{% if selected_month == 1 %}Jan{% elif selected_month == 2 %}Feb{% elif selected_month == 3 %}Mar{% elif selected_month == 4 %}Apr{% elif selected_month == 5 %}Mei{% elif selected_month == 6 %}Jun{% elif selected_month == 7 %}Jul{% elif selected_month == 8 %}Ago{% elif selected_month == 9 %}Sep{% elif selected_month == 10 %}Okt{% elif selected_month == 11 %}Nov{% else %}Des{% endif %} {{ selected_year }}</span>
-      <span class="text-[10px] font-black bg-black text-white px-2.5 py-1 rounded-full">{{ total_month|floatformat:0 }}</span>
+  <!-- SPLIT: Jumla vs Rejareja -->
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-white border rounded-2xl p-4">
+      <p class="text-[11px] font-bold text-gray-400 uppercase">Jumla Mwezi</p>
+      <p class="text-lg font-black">{{ total_filtered|floatformat:0 }} TZS</p>
+      <p class="text-xs text-gray-500">{{ sales.count }} mauzo</p>
     </div>
-    <a href="/{{ mill.slug }}/sales/?year={% if selected_month == 12 %}{{ selected_year|add:1 }}{% else %}{{ selected_year }}{% endif %}&month={% if selected_month == 12 %}1{% else %}{{ selected_month|add:1 }}{% endif %}" class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-black hover:text-white"><i class="fa-solid fa-chevron-right text-[10px]"></i></a>
+    <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+      <p class="text-[11px] font-bold text-blue-600 uppercase">Jumla (Wholesale)</p>
+      <p class="text-lg font-black text-blue-700">{{ wholesale_total|floatformat:0 }} TZS</p>
+      <p class="text-xs text-blue-600">{{ wholesale_count }} mauzo</p>
+    </div>
+    <div class="bg-green-50 border border-green-100 rounded-2xl p-4">
+      <p class="text-[11px] font-bold text-green-600 uppercase">Rejareja (Retail)</p>
+      <p class="text-lg font-black text-green-700">{{ retail_total|floatformat:0 }} TZS</p>
+      <p class="text-xs text-green-600">{{ retail_count }} mauzo</p>
+    </div>
   </div>
 
-  <!-- KALENDA NDOGO - HORIZONTAL SCROLL KAMA STORY -->
-  <div class="bg-white rounded-2xl border p-3 mb-4">
-    <div class="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+  <!-- Calendar ya siku -->
+  <div class="bg-white border rounded-2xl p-4">
+    <div class="flex gap-2 overflow-x-auto pb-2">
       {% for d in days_data %}
-      <a href="/{{ mill.slug }}/sales/?year={{ selected_year }}&month={{ selected_month }}&day={{ d.day }}" 
-         class="flex-shrink-0 w-[52px] h-[62px] rounded-xl flex flex-col items-center justify-center border transition
-         {% if selected_day == d.day|stringformat:'s' %}bg-black text-white border-black shadow{% elif d.total > 0 %}bg-white border-black{% else %}bg-gray-50 border-gray-100 text-gray-400{% endif %}">
-        <span class="text-[9px] font-bold uppercase opacity-60">T{{ d.day }}</span>
-        <span class="text-[16px] font-black leading-none mt-0.5">{{ d.day }}</span>
-        <span class="text-[9px] font-black mt-1 {% if selected_day == d.day|stringformat:'s' %}text-white{% elif d.total > 0 %}text-green-700{% else %}text-gray-300{% endif %}">
-          {% if d.total > 0 %}{{ d.total|floatformat:0 }}{% else %}•{% endif %}
-        </span>
-      </a>
+        <a href="?year={{ selected_year }}&month={{ selected_month }}&day={{ d.day }}" 
+           class="min-w-[48px] h-[48px] flex flex-col items-center justify-center rounded-xl text-xs font-bold border {% if selected_day == d.day|stringformat:'s' or selected_day == d.day %}bg-black text-white border-black{% else %}bg-gray-50 hover:bg-gray-100{% endif %}">
+          <span>T{{ d.day }}</span>
+          {% if d.total > 0 %}<span class="text-[9px]">{{ d.total|floatformat:0|slice:":3" }}k</span>{% endif %}
+        </a>
       {% endfor %}
     </div>
   </div>
 
-  <!-- LIST NDOGO SAFI -->
-  <div class="bg-white rounded-2xl border divide-y overflow-hidden">
-    <div class="px-4 py-3 flex justify-between items-center bg-gray-50/50">
-      <span class="text-[11px] font-black">{% if selected_day %}Siku {{ selected_day }}{% else %}Siku zote{% endif %} • {{ sales|length }} mauzo</span>
-      {% if selected_day %}<a href="/{{ mill.slug }}/sales/?year={{ selected_year }}&month={{ selected_month }}" class="text-[10px] font-black text-gray-500">Ona zote ×</a>{% endif %}
+  <!-- List ya mauzo na jina la mteja -->
+  <div class="bg-white border rounded-2xl">
+    <div class="p-4 border-b flex justify-between items-center">
+      <h3 class="font-black text-sm">{% if selected_day %}Siku {{ selected_day }}{% else %}Siku zote{% endif %} • {{ sales.count }} mauzo</h3>
+      <a href="?year={{ selected_year }}&month={{ selected_month }}" class="text-xs bg-gray-100 px-3 py-1 rounded-full font-bold">Siku zote</a>
     </div>
-    {% for s in sales %}
-    <div class="flex justify-between items-center px-4 py-3 hover:bg-gray-50">
-      <div class="flex gap-2.5 items-center">
-        <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-700"><i class="fa-solid fa-cart-shopping text-[10px]"></i></div>
-        <div>
-          <p class="text-xs font-black">{{ s.product.name }} - {{ s.quantity }} {{ s.product.unit }}</p>
-          <p class="text-[10px] text-gray-400 font-bold">{{ s.created_at|date:"H:i" }} • {{ s.sale_type }}</p>
+
+    <div class="divide-y">
+      {% for s in sales %}
+      <div class="p-4 flex justify-between items-start">
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <p class="font-bold text-sm">{{ s.product.name }} - {{ s.quantity|floatformat }} {{ s.product.unit }}</p>
+            {% if s.sale_type == 'WHOLESALE' %}
+              <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-black">JUMLA</span>
+            {% else %}
+              <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black">REJAREJA</span>
+            {% endif %}
+          </div>
+          
+          <!-- JINA LA MTEJA NA SIMU - HAPA -->
+          {% if s.customer_name or s.customer_phone %}
+          <div class="mt-1.5 flex items-center gap-3">
+            {% if s.customer_name %}
+              <span class="text-xs font-bold text-gray-800">👤 {{ s.customer_name }}</span>
+            {% endif %}
+            {% if s.customer_phone %}
+              <a href="tel:{{ s.customer_phone }}" class="text-xs font-bold text-blue-600">📞 {{ s.customer_phone }}</a>
+            {% endif %}
+          </div>
+          {% else %}
+            <p class="text-xs text-gray-400 mt-1">Mteja wa kawaida</p>
+          {% endif %}
+
+          <p class="text-xs text-gray-500 mt-1">{{ s.created_at|date:"H:i" }} • {{ s.price_per_unit|floatformat:0 }} x {{ s.quantity|floatformat }}</p>
+        </div>
+        <div class="text-right ml-3">
+          <p class="font-black text-sm">{{ s.total|floatformat:0 }} TZS</p>
+          <div class="flex gap-2 mt-1 justify-end">
+            <a href="/{{ mill.slug }}/sales/{{ s.id }}/edit/" class="text-[11px] text-gray-500 font-bold">Hariri</a>
+            <a href="/{{ mill.slug }}/sales/{{ s.id }}/delete/" class="text-[11px] text-red-500 font-bold">Futa</a>
+          </div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-black">{{ s.price_per_unit|floatformat:0 }}×{{ s.quantity }}</span>
-        <a href="/{{ mill.slug }}/sales/{{ s.id }}/delete/" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark text-[10px]"></i></a>
-      </div>
+      {% empty %}
+      <div class="p-8 text-center text-gray-400 text-sm">Hakuna mauzo kwa siku hii</div>
+      {% endfor %}
     </div>
-    {% empty %}
-    <div class="p-8 text-center"><p class="text-xs font-bold text-gray-400">Hakuna mauzo tarehe hii</p></div>
-    {% endfor %}
   </div>
 </div>
-
-<style>.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}</style>
 {% endblock %}
