@@ -97,7 +97,8 @@ class Sale(models.Model):
     SALE_TYPES = [('RETAIL','Retail'),('WHOLESALE','Wholesale')]
     mill = models.ForeignKey(Mill, on_delete=models.CASCADE, related_name='sales')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='sales')
-    customer_name = models.CharField(max_length=100, blank=True)
+    customer_name = models.CharField(max_length=100, blank=True, default="")
+    customer_phone = models.CharField(max_length=20, blank=True, default="")  # <-- HII NDIO MPYA KWA SIMU
     quantity = models.FloatField()
     price_per_unit = models.FloatField()
     sale_type = models.CharField(max_length=10, choices=SALE_TYPES, default='RETAIL')
@@ -112,7 +113,7 @@ class Sale(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.mill.name} Sale #{self.id} {self.product.name}"
+        return f"{self.mill.name} Sale #{self.id} {self.product.name} - {self.customer_name} {self.sale_type}"
 
 class Expense(models.Model):
     CATS = [
