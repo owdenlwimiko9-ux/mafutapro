@@ -59,24 +59,25 @@
       </div>
     </div>
     <table class="w-full text-sm">
-      <thead class="text-xs text-gray-400 uppercase"><tr><th class="text-left py-2">Mteja / Chanzo</th><th>Mbegu</th><th>Mafuta</th><th>Malipo</th><th>Status</th></tr></thead>
+      <thead class="text-xs text-gray-400 uppercase"><tr><th class="text-left py-2">Kazi ya Kiwanda / Mteja</th><th>Mbegu</th><th>Mafuta</th><th>Malipo</th><th>Status</th></tr></thead>
       <tbody>
       {% for j in jobs %}
       <tr class="border-t hover:bg-gray-50">
         <td class="py-3">
           {% if j.service_type == 'OWNER' %}
             <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-[11px] font-black">KIWANDA</span>
-            <div class="text-xs text-gray-400">{{ j.created_at|date:"H:i" }}</div>
+            <div class="font-bold text-xs mt-1">Kazi ya Kiwanda #{{ j.id }}</div>
+            <div class="text-[11px] text-gray-400">{{ j.created_at|date:"H:i" }} • {{ j.seed_weight_kg|floatformat:0 }}kg mbegu</div>
           {% else %}
-            <div class="font-bold">{{ j.customer.name|default:"Mteja" }}</div>
-            <div class="text-xs text-gray-400">{{ j.created_at|date:"d M H:i" }}</div>
+            <div class="font-bold">{{ j.customer.name|default:j.customer_name|default:"Mteja wa Nje" }}</div>
+            <div class="text-xs text-gray-400">{{ j.created_at|date:"d M H:i" }}{% if j.customer.phone %} • {{ j.customer.phone }}{% endif %}</div>
           {% endif %}
         </td>
         <td class="font-bold">{{ j.seed_weight_kg|floatformat:0 }}kg</td>
         <td class="font-bold text-amber-600">{{ j.oil_produced_litre|floatformat:0 }}L</td>
         <td class="font-bold text-xs">
           {% if j.service_type == 'OWNER' %}
-            {{ j.service_cost|floatformat:0 }} TZS
+            <span class="text-gray-500">STOO</span>
           {% else %}
             {{ j.amount_paid|floatformat:0 }}/{{ j.service_cost|floatformat:0 }}
           {% endif %}
@@ -115,19 +116,6 @@
       {% endfor %}
       {% if mill %}<a href="/{{ mill.slug }}/stock/" class="block mt-3 text-xs font-bold text-gray-500">Angalia Stoo →</a>
       {% else %}<a href="/stock/" class="block mt-3 text-xs font-bold text-gray-500">Angalia Stoo →</a>{% endif %}
-    </div>
-    <div class="bg-white rounded-2xl shadow-sm border p-6">
-      <h3 class="font-bold mb-2 text-sm">Quick Actions</h3>
-      <div class="grid grid-cols-2 gap-2">
-        {% if mill %}<a href="/{{ mill.slug }}/jobs/create/" class="bg-black text-white text-xs font-bold py-2 rounded-full text-center">+ Kazi Mpya</a>
-        <a href="/{{ mill.slug }}/report/daily/" class="bg-green-600 text-white text-xs font-bold py-2 rounded-full text-center">🖨️ Print Leo</a>
-        <a href="/{{ mill.slug }}/sales/create/" class="bg-gray-100 text-black text-xs font-bold py-2 rounded-full text-center">+ Mauzo</a>
-        <a href="/{{ mill.slug }}/stock/" class="bg-gray-100 text-black text-xs font-bold py-2 rounded-full text-center">Stoo</a>
-        {% else %}<a href="/jobs/create/" class="bg-black text-white text-xs font-bold py-2 rounded-full text-center">+ Kazi Mpya</a>
-        <a href="/report/daily/" class="bg-green-600 text-white text-xs font-bold py-2 rounded-full text-center">🖨️ Print Leo</a>
-        <a href="/sales/create/" class="bg-gray-100 text-black text-xs font-bold py-2 rounded-full text-center">+ Mauzo</a>
-        <a href="/stock/" class="bg-gray-100 text-black text-xs font-bold py-2 rounded-full text-center">Stoo</a>{% endif %}
-      </div>
     </div>
   </div>
 </div>
