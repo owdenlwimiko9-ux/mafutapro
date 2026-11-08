@@ -3,7 +3,8 @@
 <div class="max-w-lg mx-auto bg-white rounded-2xl border p-6 shadow-sm">
   <div class="flex justify-between items-center mb-5">
     <h2 class="text-xl font-black">{% if sale %}Hariri Mauzo #{{ sale.id }}{% else %}Uza Mafuta / Mashudu{% endif %}</h2>
-    <a href="{% url 'sale_list' %}" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full font-bold">Rudi</a>
+    {% if mill %}<a href="/{{ mill.slug }}/sales/" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full font-bold">Rudi</a>
+    {% else %}<a href="{% url 'sale_list' %}" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full font-bold">Rudi</a>{% endif %}
   </div>
 
   {% if error %}
@@ -20,14 +21,16 @@
       <label class="text-xs font-bold uppercase text-gray-500">Bidhaa *</label>
       <select name="product" id="productSelect" class="w-full border rounded-xl p-3 font-bold bg-white" required>
         {% for p in products %}
-          {% with qty=0 %}{% endwith %}
+          {# FIX: Tuna-print stock MOJA tu, si ku-add 0 nyuma #}
+          {% with stock_val=0 %}
           <option value="{{ p.id }}" 
             {% if sale and sale.product.id == p.id %}selected{% endif %}
             data-stock="{% for s in stocks %}{% if s.product.id == p.id %}{{ s.quantity|floatformat:0 }}{% endif %}{% endfor %}" 
             data-unit="{{ p.unit }}" 
             data-price="{{ p.selling_price|default:0 }}">
-            {{ p.name }} - Stoo: {% for s in stocks %}{% if s.product.id == p.id %}{{ s.quantity|floatformat:0 }}{% else %}{% if forloop.last %}0{% endif %}{% endif %}{% endfor %} {{ p.unit }}
+            {{ p.name }} - Stoo: {% for s in stocks %}{% if s.product.id == p.id %}{{ s.quantity|floatformat:0 }}{% endif %}{% endfor %}{% if not stocks %}0{% endif %} {{ p.unit }}
           </option>
+          {% endwith %}
         {% endfor %}
       </select>
       <p id="stockInfo" class="text-xs font-bold mt-1.5 px-1"></p>
@@ -81,7 +84,8 @@
     <button type="submit" class="w-full bg-black text-white py-3.5 rounded-full font-black text-sm uppercase tracking-wide hover:bg-gray-900 transition">
       {% if sale %}✓ Hifadhi Mabadiliko{% else %}✓ Thibitisha Mauzo{% endif %}
     </button>
-    <a href="{% url 'sale_list' %}" class="block text-center text-sm text-gray-500 mt-2 font-bold">Ghairi / Rudi kwenye Mauzo</a>
+    {% if mill %}<a href="/{{ mill.slug }}/sales/" class="block text-center text-sm text-gray-500 mt-2 font-bold">Ghairi / Rudi kwenye Mauzo</a>
+    {% else %}<a href="{% url 'sale_list' %}" class="block text-center text-sm text-gray-500 mt-2 font-bold">Ghairi / Rudi kwenye Mauzo</a>{% endif %}
   </form>
 </div>
 
@@ -103,7 +107,9 @@ function updateTotal(){
 function updateStock(){
   const opt = prodSel.options[prodSel.selectedIndex];
   if(!opt) return;
-  const stock = parseFloat(opt.dataset.stock) || 0;
+  // FIX: Kama data-stock ni tupu, tumia 0
+  const stockRaw = opt.dataset.stock.trim();
+  const stock = stockRaw ? parseFloat(stockRaw) : 0;
   const unit = opt.dataset.unit || '';
   const price = opt.dataset.price || '0';
   const currentQty = parseFloat(qtyInput.value) || 0;
@@ -119,7 +125,6 @@ function updateStock(){
     stockInfo.className = 'text-xs font-bold mt-1.5 px-1 text-green-600';
   }
   
-  // Auto-fill bei kama ni mpya na bei tupu
   {% if not sale %}
   if(!priceInput.value || priceInput.dataset.autofilled === "1"){
     priceInput.value = price;
@@ -135,7 +140,6 @@ qtyInput.addEventListener('input', () => { updateStock(); updateTotal(); });
 priceInput.addEventListener('input', updateTotal);
 saleType.addEventListener('change', updateTotal);
 
-// Init
 updateStock();
 </script>
 {% endblock %}
