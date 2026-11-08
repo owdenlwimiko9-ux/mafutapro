@@ -32,7 +32,6 @@
   </div>
 </div>
 
-<!-- SUMMARY YA LEO PEKEE -->
 <div class="bg-black text-white rounded-2xl p-4 mb-6 flex justify-between items-center">
   <div class="flex gap-6 text-sm">
     <div><span class="text-gray-400 text-xs uppercase">Leo Kazi:</span> <span class="font-black ml-1">{{ jobs_today.count }}</span></div>
@@ -67,20 +66,16 @@
           {% if j.service_type == 'OWNER' %}
             <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-[11px] font-black">KIWANDA</span>
             <div class="font-bold text-xs mt-1">Kazi ya Kiwanda #{{ j.id }}</div>
-            <div class="text-[11px] text-gray-400">{{ j.created_at|date:"H:i" }} • {{ j.seed_weight_kg|floatformat:0 }}kg mbegu</div>
+            <div class="text-[11px] text-gray-400">{{ j.created_at|date:"H:i" }}</div>
           {% else %}
-            <div class="font-bold">{{ j.customer.name|default:j.customer_name|default:"Mteja wa Nje" }}</div>
-            <div class="text-xs text-gray-400">{{ j.created_at|date:"d M H:i" }}{% if j.customer.phone %} • {{ j.customer.phone }}{% endif %}</div>
+            <div class="font-bold">{% if j.customer %}{{ j.customer.name }}{% else %}Mteja wa Nje{% endif %}</div>
+            <div class="text-xs text-gray-400">{{ j.created_at|date:"d M H:i" }}</div>
           {% endif %}
         </td>
         <td class="font-bold">{{ j.seed_weight_kg|floatformat:0 }}kg</td>
         <td class="font-bold text-amber-600">{{ j.oil_produced_litre|floatformat:0 }}L</td>
         <td class="font-bold text-xs">
-          {% if j.service_type == 'OWNER' %}
-            <span class="text-gray-500">STOO</span>
-          {% else %}
-            {{ j.amount_paid|floatformat:0 }}/{{ j.service_cost|floatformat:0 }}
-          {% endif %}
+          {% if j.service_type == 'OWNER' %}STOO{% else %}{{ j.amount_paid|floatformat:0 }}/{{ j.service_cost|floatformat:0 }}{% endif %}
         </td>
         <td>
           {% if j.service_type == 'OWNER' %}
@@ -95,8 +90,6 @@
       {% endfor %}
       </tbody>
     </table>
-    {% if mill %}<a href="/{{ mill.slug }}/jobs/?date=zote" class="block text-center mt-4 text-xs font-bold text-gray-500 hover:text-black">Ona Kazi Zote →</a>
-    {% else %}<a href="/jobs/?date=zote" class="block text-center mt-4 text-xs font-bold text-gray-500 hover:text-black">Ona Kazi Zote →</a>{% endif %}
   </div>
   
   <div class="space-y-4">
@@ -104,18 +97,14 @@
       <h3 class="font-bold mb-3">Madeni Yote</h3>
       <p class="text-3xl font-black text-red-600">{{ debt|floatformat:0 }} TZS</p>
       <p class="text-xs text-gray-400 mt-2">Wateja wanaodaiwa (auto-update)</p>
-      {% if mill %}<a href="/{{ mill.slug }}/jobs/?date=zote" class="block mt-4 text-sm font-bold bg-red-50 text-red-700 px-3 py-2 rounded-full text-center">Fuatilia Madeni →</a>
-      {% else %}<a href="/jobs/?date=zote" class="block mt-4 text-sm font-bold bg-red-50 text-red-700 px-3 py-2 rounded-full text-center">Fuatilia Madeni →</a>{% endif %}
     </div>
     <div class="bg-white rounded-2xl shadow-sm border p-6">
       <h3 class="font-bold mb-3">Tahadhari ya Stoo</h3>
       {% for s in low_stocks %}
         <div class="flex gap-2 text-sm text-red-600 bg-red-50 p-2 rounded-lg mb-2 font-bold"><span>⚠️</span> {{ s.product.name }} imebakia {{ s.quantity|floatformat:0 }}</div>
       {% empty %}
-        <p class="text-sm text-green-600 font-bold">✓ Stoo iko sawa, hakuna tahadhari</p>
+        <p class="text-sm text-green-600 font-bold">✓ Stoo iko sawa</p>
       {% endfor %}
-      {% if mill %}<a href="/{{ mill.slug }}/stock/" class="block mt-3 text-xs font-bold text-gray-500">Angalia Stoo →</a>
-      {% else %}<a href="/stock/" class="block mt-3 text-xs font-bold text-gray-500">Angalia Stoo →</a>{% endif %}
     </div>
   </div>
 </div>
