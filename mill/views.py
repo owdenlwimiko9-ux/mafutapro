@@ -90,6 +90,7 @@ def mill_list(request, mill_slug=None):
     if not request.user.is_authenticated: return redirect('/login/')
     mills = Mill.objects.filter(is_active=True).order_by('-id') if request.user.is_superuser else Mill.objects.filter(owner=request.user, is_active=True)
     return render(request, 'mill/mill_list.html', {'mills': mills, 'mill': get_mill(request, mill_slug), 'is_super': request.user.is_superuser})
+
 def mill_create(request, mill_slug=None):
     if request.method == 'POST':
         name = request.POST.get('name'); slug = name.lower().replace(' ', '-').replace('/', '-')
@@ -127,7 +128,7 @@ def job_create(request, mill_slug=None):
             cake = to_f(request.POST.get('cake_produced_owner'))
             buy_cost = to_f(request.POST.get('buying_cost'))
 
-            # 1. KWANZA TENGEZA EXPENSE - HII NDIO MUHIMU
+            # 1. PESA KWENDA MATUMIZI - LAZIMA
             if buy_cost > 0:
                 Expense.objects.create(
                     mill=mill,
@@ -135,29 +136,46 @@ def job_create(request, mill_slug=None):
                     description=f'Manunuzi alizeti {seed:g}KG kwa kusaga kiwanda - Mafuta {oil:g}L',
                     amount=buy_cost
                 )
-            
-            # 2. KISHA TENGEZA JOB
+
+            # 2. STOCK YA ALIZETI - PUNGUA (Kama ulivyosema)
+            if seed > 0:
+                prod_seed = Product.objects.filter(mill=mill, name__icontains='Alizeti').first()
+                if prod_seed:
+                    st_seed,_ = Stock.objects.get_or_create(mill=mill, product=prod_seed, defaults={'quantity':0,'low_alert':10})
+                    st_seed.quantity = max(0, to_f(st_seed.quantity) - seed)
+                    st_seed.save()
+                    StockMovement.objects.create(mill=mill, product=prod_seed, type='OUT', quantity=seed, reason=f'Kiwanda - Kutumia alizeti {seed:g}KG')
+
+            # 3. STOCK YA MAFUTA - ONGEZEKA SAHIHI (sio Dumu)
+            if oil > 0:
+                prod_oil = Product.objects.filter(mill=mill, name__icontains='Mafuta ya Alizeti').first()
+                if not prod_oil:
+                    prod_oil = Product.objects.filter(mill=mill, type='OIL', unit='Litre').first()
+                if not prod_oil:
+                    prod_oil = Product.objects.filter(mill=mill, type='OIL').exclude(name__icontains='Dumu').first()
+                if prod_oil:
+                    st_oil,_ = Stock.objects.get_or_create(mill=mill, product=prod_oil, defaults={'quantity':0,'low_alert':10})
+                    st_oil.quantity = to_f(st_oil.quantity) + oil
+                    st_oil.save()
+                    StockMovement.objects.create(mill=mill, product=prod_oil, type='IN', quantity=oil, reason=f'Kiwanda - Mafuta {oil:g}L kutoka {seed:g}KG')
+
+            # 4. STOCK YA MASHUDU - ONGEZEKA
+            if cake > 0:
+                prod_cake = Product.objects.filter(mill=mill, name__icontains='Mashudu').first()
+                if prod_cake:
+                    st_cake,_ = Stock.objects.get_or_create(mill=mill, product=prod_cake, defaults={'quantity':0,'low_alert':10})
+                    st_cake.quantity = to_f(st_cake.quantity) + cake
+                    st_cake.save()
+                    StockMovement.objects.create(mill=mill, product=prod_cake, type='IN', quantity=cake, reason='Kiwanda - Mashudu')
+
+            # 5. JOB RECORD
             MillingJob.objects.create(
                 mill=mill, customer=None, 
                 seed_weight_kg=seed, oil_produced_litre=oil, cake_produced_kg=cake, 
                 service_type='KIWANDA', service_cost=buy_cost, amount_paid=buy_cost, payment_status='PAID'
             )
-            
-            # 3. MWISHO STOCK
-            if oil > 0:
-                prod = Product.objects.filter(mill=mill, name__icontains='Mafuta ya Alizeti').first() or Product.objects.filter(mill=mill, type='OIL').first()
-                if prod:
-                    st,_ = Stock.objects.get_or_create(mill=mill, product=prod, defaults={'quantity':0,'low_alert':10})
-                    st.quantity = to_f(st.quantity) + oil
-                    st.save()
-                    StockMovement.objects.create(mill=mill, product=prod, type='IN', quantity=oil, reason='Kiwanda - Kusaga')
-            if cake > 0:
-                prod_c = Product.objects.filter(mill=mill, name__icontains='Mashudu').first()
-                if prod_c:
-                    st,_ = Stock.objects.get_or_create(mill=mill, product=prod_c, defaults={'quantity':0,'low_alert':10})
-                    st.quantity = to_f(st.quantity) + cake
-                    st.save()
         else:
+            # MTEJA - STOCK HAIPUNGUI (mteja kaleta)
             cust = None; sel = request.POST.get('customer')
             if sel: cust = Customer.objects.filter(id=sel, mill=mill).first()
             name = request.POST.get('new_customer_name'); phone = request.POST.get('new_customer_phone')
